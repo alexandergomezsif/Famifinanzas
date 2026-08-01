@@ -435,6 +435,15 @@ class FinanceApp {
     if (el) el.textContent = formatted;
   }
 
+  formatMoney(val) {
+    const num = parseFloat(val) || 0;
+    const curr = this.state.settings.currency || '$';
+    if (num % 1 === 0) {
+      return `${curr}${num.toLocaleString('es-ES', { maximumFractionDigits: 0 })}`;
+    }
+    return `${curr}${num.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
   // Cálculos Financieros Generales
   getTotalIncome() {
     return this.state.people.reduce((acc, p) => acc + (parseFloat(p.income) || 0), 0);
@@ -541,7 +550,7 @@ class FinanceApp {
     // 1. Evaluación de Flujo de Caja (Superávit / Déficit)
     if (calcs.remaining < 0) {
       score -= 35;
-      criticals.push(`Déficit Presupuestal Mensual: Faltan ${curr}${Math.abs(calcs.remaining).toLocaleString('es-ES', { minimumFractionDigits: 2 })} para cubrir los compromisos del mes.`);
+      criticals.push(`Déficit Presupuestal Mensual: Faltan ${this.formatMoney(Math.abs(calcs.remaining))} para cubrir los compromisos del mes.`);
       advice.push({
         title: 'Plan de Choque Inmediato',
         text: 'Ajuste los gastos de estilo de vida no esenciales (entretenimiento, compras discrecionales) hasta nivelar el flujo de caja positivo.'
@@ -554,7 +563,7 @@ class FinanceApp {
         text: 'Procure dejar un margen libre de al menos el 5% de los ingresos para imprevistos menores de liquidez diaria.'
       });
     } else {
-      strengths.push(`Superávit Operativo Positivo: El hogar conserva un margen libre mensual de ${curr}${calcs.remaining.toLocaleString('es-ES', { minimumFractionDigits: 2 })}.`);
+      strengths.push(`Superávit Operativo Positivo: El hogar conserva un margen libre mensual de ${this.formatMoney(calcs.remaining)}.`);
     }
 
     // 2. Evaluación de Endeudamiento (DTI)
@@ -591,7 +600,7 @@ class FinanceApp {
       criticals.push('No hay asignación de ahorro o inversión mensual registrada.');
       advice.push({
         title: 'Regla "Páguese a Usted Primero"',
-        text: `Reserve automáticamente al menos el 10% de los ingresos (${curr}${(calcs.totalIncome * 0.1).toLocaleString('es-ES', { minimumFractionDigits: 2 })}) al inicio de cada mes antes de ejecutar los demás gastos.`
+        text: `Reserve automáticamente al menos el 10% de los ingresos (${this.formatMoney(calcs.totalIncome * 0.1)}) al inicio de cada mes antes de ejecutar los demás gastos.`
       });
     }
 
@@ -651,7 +660,6 @@ class FinanceApp {
 
   renderDashboard() {
     const calcs = this.calculateFinancialHealth();
-    const curr = this.state.settings.currency;
 
     const elIncome = document.getElementById('dash-income');
     const elExpenses = document.getElementById('dash-expenses');
@@ -661,14 +669,14 @@ class FinanceApp {
     const elPill = document.getElementById('dash-status-pill');
     const elDesc = document.getElementById('dash-status-desc');
 
-    if (elIncome) elIncome.textContent = `${curr}${calcs.totalIncome.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`;
-    if (elExpenses) elExpenses.textContent = `${curr}${calcs.totalExpenses.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`;
+    if (elIncome) elIncome.textContent = this.formatMoney(calcs.totalIncome);
+    if (elExpenses) elExpenses.textContent = this.formatMoney(calcs.totalExpenses);
     if (elRemaining) {
-      elRemaining.textContent = `${curr}${calcs.remaining.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`;
+      elRemaining.textContent = this.formatMoney(calcs.remaining);
       elRemaining.style.color = calcs.remaining >= 0 ? 'var(--text-primary)' : 'var(--danger)';
     }
-    if (elSavings) elSavings.textContent = `${curr}${calcs.totalSavings.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`;
-    if (elDebts) elDebts.textContent = `${curr}${calcs.totalDebts.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`;
+    if (elSavings) elSavings.textContent = this.formatMoney(calcs.totalSavings);
+    if (elDebts) elDebts.textContent = this.formatMoney(calcs.totalDebts);
 
     if (elPill) {
       elPill.textContent = calcs.statusText;
@@ -691,7 +699,7 @@ class FinanceApp {
                 <strong>${p.name}</strong>
               </div>
               <div style="text-align: right;">
-                <div>${curr}${parseFloat(p.income).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
+                <div>${this.formatMoney(p.income)}</div>
                 <div class="person-share">${share.toFixed(1)}% del ingreso total</div>
               </div>
             </div>
@@ -720,7 +728,7 @@ class FinanceApp {
                   <div class="item-title">${ob.name}</div>
                   <div class="item-cat">${ob.category}</div>
                 </div>
-                <div class="item-amount">${curr}${parseFloat(pay.amount).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
+                <div class="item-amount">${this.formatMoney(pay.amount)}</div>
               </div>
               <div class="item-footer-actions">
                 <button class="btn btn-primary btn-sm" onclick="app.openPaymentModal('${pay.id}')">Registrar Pago</button>
