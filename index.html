@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestor de Finanzas Familiares</title>
+  <meta name="description" content="Aplicación offline y moderna para la gestión de presupuesto y finanzas familiares mensuales.">
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top App Bar -->
+  <header class="top-bar">
+    <div class="top-bar-brand">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 id="app-title-display">Finanzas Familiares</h1>
+        <span class="app-subtitle" id="current-month-display">Mes Actual</span>
+      </div>
+    </div>
+    <div class="top-bar-actions">
+      <button class="icon-btn" id="theme-toggle-btn" title="Cambiar Tema" aria-label="Cambiar Tema">
+        <svg id="theme-icon-sun" class="hidden" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"></circle>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+        </svg>
+        <svg id="theme-icon-moon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation for Desktop -->
+    <nav class="sidebar">
+      <button class="nav-item active" data-tab="dashboard">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span>Panel Principal</span>
+      </button>
+      <button class="nav-item" data-tab="people">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        <span>Personas</span>
+      </button>
+      <button class="nav-item" data-tab="obligations">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        <span>Obligaciones</span>
+      </button>
+      <button class="nav-item" data-tab="payments">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+        <span>Pagos</span>
+      </button>
+      <button class="nav-item" data-tab="statistics">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        <span>Estadísticas</span>
+      </button>
+      <button class="nav-item" data-tab="settings">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span>Configuración</span>
+      </button>
+    </nav>
+
+    <!-- Main Content Views -->
+    <main class="main-content">
+
+      <!-- DASHBOARD VIEW -->
+      <section id="view-dashboard" class="tab-view active">
+        <div class="view-header">
+          <div>
+            <h2>Panel Financiero</h2>
+            <p class="view-desc">Resumen general del presupuesto mensual y balance del hogar.</p>
+          </div>
+        </div>
+
+        <!-- Summary Cards Grid -->
+        <div class="metrics-grid">
+          <div class="metric-card card-income">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+            </div>
+            <div class="metric-info">
+              <span class="metric-label">Ingresos Mensuales</span>
+              <h3 class="metric-value" id="dash-income">$0.00</h3>
+            </div>
+          </div>
+
+          <div class="metric-card card-expense">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+            </div>
+            <div class="metric-info">
+              <span class="metric-label">Gastos Mensuales</span>
+              <h3 class="metric-value" id="dash-expenses">$0.00</h3>
+            </div>
+          </div>
+
+          <div class="metric-card card-remaining">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+            </div>
+            <div class="metric-info">
+              <span class="metric-label">Dinero Restante</span>
+              <h3 class="metric-value" id="dash-remaining">$0.00</h3>
+            </div>
+          </div>
+
+          <div class="metric-card card-savings">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-3.5c1-.5 1.5-1 2-2.5V7.5C20 6 19.5 5 19 5z"></path></svg>
+            </div>
+            <div class="metric-info">
+              <span class="metric-label">Ahorro Mensual</span>
+              <h3 class="metric-value" id="dash-savings">$0.00</h3>
+            </div>
+          </div>
+
+          <div class="metric-card card-debt">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </div>
+            <div class="metric-info">
+              <span class="metric-label">Deudas Mensuales</span>
+              <h3 class="metric-value" id="dash-debts">$0.00</h3>
+            </div>
+          </div>
+
+          <div class="metric-card card-status">
+            <div class="metric-info full-width">
+              <span class="metric-label">Estado Financiero</span>
+              <div class="status-badge-container">
+                <span class="status-pill" id="dash-status-pill">Calculando...</span>
+                <span class="status-desc" id="dash-status-desc">Analizando relación del presupuesto</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Body Content -->
+        <div class="dashboard-grid">
+          <!-- Participation Cards -->
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Ingresos y Participación</h3>
+            </div>
+            <div id="dash-people-list" class="cards-stack">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Quick Charts -->
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Distribución del Presupuesto</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="dash-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending Obligations Quick List -->
+        <div class="content-card margin-top">
+          <div class="card-header">
+            <h3>Pagos Pendientes de este Mes</h3>
+            <button class="btn btn-secondary btn-sm" onclick="app.switchTab('payments')">Ver Todos los Pagos</button>
+          </div>
+          <div id="dash-pending-list" class="cards-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </section>
+
+      <!-- PEOPLE VIEW -->
+      <section id="view-people" class="tab-view">
+        <div class="view-header">
+          <div>
+            <h2>Personas e Integrantes</h2>
+            <p class="view-desc">Administre los miembros de la familia, sus ingresos y porcentaje automático de participación.</p>
+          </div>
+          <button class="btn btn-primary" onclick="app.openPersonModal()">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Agregar Persona
+          </button>
+        </div>
+
+        <div id="people-cards-grid" class="cards-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- OBLIGATIONS VIEW -->
+      <section id="view-obligations" class="tab-view">
+        <div class="view-header">
+          <div>
+            <h2>Obligaciones Mensuales</h2>
+            <p class="view-desc">Registre gastos recurrentes, pago de deudas y metas de ahorro.</p>
+          </div>
+          <button class="btn btn-primary" onclick="app.openObligationModal()">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Agregar Obligación
+          </button>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label for="ob-filter-category">Categoría:</label>
+            <select id="ob-filter-category" class="form-input">
+              <option value="all">Todas las Categorías</option>
+              <option value="Vivienda">Vivienda</option>
+              <option value="Servicios Públicos">Servicios Públicos</option>
+              <option value="Alimentación y Mercado">Alimentación y Mercado</option>
+              <option value="Transporte">Transporte</option>
+              <option value="Salud y Medicina">Salud y Medicina</option>
+              <option value="Pago de Deuda">Pago de Deuda</option>
+              <option value="Ahorro e Inversión">Ahorro e Inversión</option>
+              <option value="Entretenimiento">Entretenimiento</option>
+              <option value="Educación">Educación</option>
+              <option value="Seguros">Seguros</option>
+              <option value="Varios">Varios</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="ob-filter-responsible">Responsable:</label>
+            <select id="ob-filter-responsible" class="form-input">
+              <option value="all">Todos</option>
+              <option value="shared">Compartido</option>
+              <!-- People dynamically inserted -->
+            </select>
+          </div>
+        </div>
+
+        <div id="obligations-cards-grid" class="cards-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- PAYMENTS VIEW -->
+      <section id="view-payments" class="tab-view">
+        <div class="view-header">
+          <div>
+            <h2>Control de Pagos Mensuales</h2>
+            <p class="view-desc">Haga seguimiento al estado de cada pago, fecha, notas y comprobantes.</p>
+          </div>
+          <div class="month-selector">
+            <button class="icon-btn" onclick="app.changeMonth(-1)" title="Mes Anterior">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <input type="month" id="payments-month-input" class="form-input month-picker-input">
+            <button class="icon-btn" onclick="app.changeMonth(1)" title="Mes Siguiente">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label for="pay-filter-status">Estado:</label>
+            <select id="pay-filter-status" class="form-input">
+              <option value="all">Todos los Pagos</option>
+              <option value="pending">Solo Pendientes</option>
+              <option value="paid">Solo Pagados</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="payments-cards-grid" class="cards-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- STATISTICS VIEW -->
+      <section id="view-statistics" class="tab-view">
+        <div class="view-header">
+          <div>
+            <h2>Estadísticas y Análisis Financiero</h2>
+            <p class="view-desc">Gráficos interactivos de ingresos, distribución por categoría y evolución mensual.</p>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Ingresos vs Gastos</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-income-vs-expenses"></canvas>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Gastos por Categoría</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-expenses-by-category"></canvas>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Distribución de Ahorros y Deudas</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-savings-debts"></canvas>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Evolución Mensual (Últimos 6 Meses)</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-monthly-evolution"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS VIEW -->
+      <section id="view-settings" class="tab-view">
+        <div class="view-header">
+          <div>
+            <h2>Configuración y Copia de Seguridad</h2>
+            <p class="view-desc">Configure datos del hogar, preferencias de moneda y respaldo offline.</p>
+          </div>
+        </div>
+
+        <div class="settings-stack">
+          <!-- Household Config -->
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Preferencias del Hogar</h3>
+            </div>
+            <form id="form-settings-general" onsubmit="app.saveGeneralSettings(event)">
+              <div class="form-group">
+                <label for="setting-household-name">Nombre de la Familia / Hogar</label>
+                <input type="text" id="setting-household-name" class="form-input" placeholder="ej. Familia Miller" required>
+              </div>
+              <div class="form-group">
+                <label for="setting-currency">Símbolo de Moneda</label>
+                <input type="text" id="setting-currency" class="form-input" placeholder="ej. $, €, £, S/, R$, Mex$" required>
+              </div>
+              <button type="submit" class="btn btn-primary">Guardar Preferencias</button>
+            </form>
+          </div>
+
+          <!-- Backup & Restore -->
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Copia de Seguridad y Restauración</h3>
+            </div>
+            <p class="card-text">Exporte la totalidad de registros, obligaciones, historial de pagos y comprobantes adjuntos en un archivo JSON seguro. Guarde su copia de respaldo offline o transfiérala a otro dispositivo.</p>
+
+            <div class="settings-action-row">
+              <button class="btn btn-secondary" onclick="app.exportBackup()">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Exportar Backup JSON
+              </button>
+
+              <label class="btn btn-secondary btn-file-label">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                Restaurar Backup JSON
+                <input type="file" id="backup-file-input" accept=".json" onchange="app.importBackup(event)" style="display: none;">
+              </label>
+            </div>
+          </div>
+
+          <!-- Danger Zone -->
+          <div class="content-card card-danger">
+            <div class="card-header">
+              <h3 class="danger-title">Restablecer Datos de la Aplicación</h3>
+            </div>
+            <p class="card-text">Borra los datos guardados en el almacenamiento local y reinicia la aplicación con información de demostración limpia.</p>
+            <button class="btn btn-danger" onclick="app.resetAllData()">Restablecer Todos los Datos</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Bottom Navigation for Mobile -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="dashboard">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+      <span>Inicio</span>
+    </button>
+    <button class="nav-item" data-tab="people">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+      <span>Personas</span>
+    </button>
+    <button class="nav-item" data-tab="obligations">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
+      <span>Obligaciones</span>
+    </button>
+    <button class="nav-item" data-tab="payments">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"></rect></svg>
+      <span>Pagos</span>
+    </button>
+    <button class="nav-item" data-tab="statistics">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+      <span>Estadísticas</span>
+    </button>
+    <button class="nav-item" data-tab="settings">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle></svg>
+      <span>Ajustes</span>
+    </button>
+  </nav>
+
+  <!-- Contextual Floating Action Button -->
+  <button class="fab" id="global-fab" aria-label="Agregar Acción" onclick="app.handleFabClick()">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+  </button>
+
+  <!-- MODALS -->
+
+  <!-- Modal: Person Form -->
+  <div class="modal-overlay" id="modal-person">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-person-title">Agregar Persona</h3>
+        <button class="icon-btn modal-close" onclick="app.closeModal('modal-person')">&times;</button>
+      </div>
+      <form id="form-person" onsubmit="app.savePerson(event)">
+        <input type="hidden" id="person-id">
+        <div class="form-group">
+          <label for="person-name">Nombre Completo</label>
+          <input type="text" id="person-name" class="form-input" placeholder="ej. María" required>
+        </div>
+        <div class="form-group">
+          <label for="person-income">Ingreso Mensual (<span class="curr-sym">$</span>)</label>
+          <input type="number" step="0.01" min="0" id="person-income" class="form-input" placeholder="0.00" required>
+        </div>
+        <div class="form-group">
+          <label for="person-color">Color Distintivo</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="person-color" class="color-input" value="#4F46E5">
+            <span class="color-val-text" id="person-color-val">#4F46E5</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-person')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Persona</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Obligation Form -->
+  <div class="modal-overlay" id="modal-obligation">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-obligation-title">Agregar Obligación</h3>
+        <button class="icon-btn modal-close" onclick="app.closeModal('modal-obligation')">&times;</button>
+      </div>
+      <form id="form-obligation" onsubmit="app.saveObligation(event)">
+        <input type="hidden" id="ob-id">
+        <div class="form-group">
+          <label for="ob-name">Nombre de la Obligación</label>
+          <input type="text" id="ob-name" class="form-input" placeholder="ej. Factura de Luz, Alquiler, Crédito Auto" required>
+        </div>
+        <div class="form-group">
+          <label for="ob-category">Categoría</label>
+          <select id="ob-category" class="form-input" required>
+            <option value="Vivienda">Vivienda</option>
+            <option value="Servicios Públicos">Servicios Públicos</option>
+            <option value="Alimentación y Mercado">Alimentación y Mercado</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Salud y Medicina">Salud y Medicina</option>
+            <option value="Pago de Deuda">Pago de Deuda</option>
+            <option value="Ahorro e Inversión">Ahorro e Inversión</option>
+            <option value="Entretenimiento">Entretenimiento</option>
+            <option value="Educación">Educación</option>
+            <option value="Seguros">Seguros</option>
+            <option value="Varios">Varios</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="ob-type">Clasificación de Obligación</label>
+          <select id="ob-type" class="form-input" required>
+            <option value="expense">Gasto Estándar</option>
+            <option value="debt">Obligación de Deuda</option>
+            <option value="savings">Meta de Ahorro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="ob-amount">Monto Mensual (<span class="curr-sym">$</span>)</label>
+          <input type="number" step="0.01" min="0.01" id="ob-amount" class="form-input" placeholder="0.00" required>
+        </div>
+        <div class="form-group">
+          <label for="ob-responsible">Responsable del Pago</label>
+          <select id="ob-responsible" class="form-input" required>
+            <option value="shared">Compartido (Dividido por % de ingresos)</option>
+            <!-- People options dynamically inserted -->
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-obligation')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Obligación</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Payment Details & Receipt -->
+  <div class="modal-overlay" id="modal-payment">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-payment-title">Registrar Pago</h3>
+        <button class="icon-btn modal-close" onclick="app.closeModal('modal-payment')">&times;</button>
+      </div>
+      <form id="form-payment" onsubmit="app.savePayment(event)">
+        <input type="hidden" id="pay-id">
+        <div class="form-group">
+          <label>Obligación</label>
+          <div id="pay-ob-name-display" class="static-input-display">Alquiler</div>
+        </div>
+        <div class="form-group">
+          <label for="pay-status">Estado del Pago</label>
+          <select id="pay-status" class="form-input" required>
+            <option value="pending">Pendiente</option>
+            <option value="paid">Pagado</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="pay-date">Fecha de Pago</label>
+            <input type="date" id="pay-date" class="form-input">
+          </div>
+          <div class="form-group flex-1">
+            <label for="pay-time">Hora</label>
+            <input type="time" id="pay-time" class="form-input">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="pay-paid-by">Realizado Por</label>
+          <select id="pay-paid-by" class="form-input">
+            <option value="">-- Seleccionar Persona --</option>
+            <!-- People options dynamically inserted -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="pay-amount">Monto Pagado (<span class="curr-sym">$</span>)</label>
+          <input type="number" step="0.01" min="0" id="pay-amount" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label for="pay-notes">Notas / Observaciones</label>
+          <textarea id="pay-notes" class="form-input form-textarea" rows="2" placeholder="ej. Pagado mediante transferencia bancaria ref #9812"></textarea>
+        </div>
+
+        <!-- Attachment Uploader -->
+        <div class="form-group">
+          <label>Comprobante de Pago (JPG, PNG, WEBP, PDF)</label>
+          <div class="file-uploader-box">
+            <input type="file" id="pay-attachment-input" accept="image/jpeg,image/png,image/webp,application/pdf" onchange="app.handleFileUpload(event)" style="display:none;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('pay-attachment-input').click()">
+              Adjuntar Archivo de Comprobante
+            </button>
+            <div id="attachment-preview" class="attachment-preview-area">
+              <span class="muted-text">Sin comprobante adjunto</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-payment')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Registro de Pago</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Receipt Viewer -->
+  <div class="modal-overlay" id="modal-receipt-view">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 id="receipt-modal-title">Vista Previa de Comprobante</h3>
+        <button class="icon-btn modal-close" onclick="app.closeModal('modal-receipt-view')">&times;</button>
+      </div>
+      <div id="receipt-viewer-content" class="receipt-viewer-body">
+        <!-- Image or PDF viewer injected here -->
+      </div>
+      <div class="modal-footer">
+        <a id="receipt-download-btn" class="btn btn-primary" download="comprobante">Descargar Archivo</a>
+        <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-receipt-view')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
