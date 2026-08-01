@@ -1,6 +1,6 @@
 /* =========================================================
-   ESTILOS - GESTOR DE FINANZAS FAMILIARES
-   Tema Moderno, Responsive y Soporte para Modo Oscuro/Claro
+   FAMIFINANZAS - ESTILOS PRINCIPALES Y MODO IMPRESIÓN
+   Desarrollado por Alex Gómez Avendaño
    ========================================================= */
 
 :root {
@@ -37,8 +37,8 @@
   --radius-lg: 16px;
   --radius-full: 9999px;
   
-  --topbar-height: 68px;
-  --sidebar-width: 240px;
+  --topbar-height: 74px;
+  --sidebar-width: 250px;
   --bottomnav-height: 64px;
 }
 
@@ -89,7 +89,7 @@ body {
 }
 
 /* =========================================================
-   TOP APP BAR
+   TOP APP BAR & LOGO BRANDING
    ========================================================= */
 .top-bar {
   height: var(--topbar-height);
@@ -108,39 +108,66 @@ body {
 .top-bar-brand {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.9rem;
 }
 
 .logo-icon {
-  background: linear-gradient(135deg, var(--primary), #818cf8);
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
   color: white;
-  width: 42px;
-  height: 42px;
+  width: 46px;
+  height: 46px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+  flex-shrink: 0;
 }
 
-.top-bar-brand h1 {
+.brand-titles {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.app-main-title {
   font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--primary);
+  text-transform: uppercase;
 }
 
-.app-subtitle {
-  font-size: 0.8rem;
-  font-weight: 500;
+.app-family-subtitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 0.1rem;
+}
+
+.app-dev-signature {
+  font-size: 0.65rem;
+  font-weight: 400;
   color: var(--text-muted);
-  display: block;
+  letter-spacing: 0.02em;
+  margin-top: 0.1rem;
 }
 
 .top-bar-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+}
+
+.month-pill-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.8rem;
+  background-color: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  text-transform: uppercase;
 }
 
 /* =========================================================
@@ -161,7 +188,7 @@ body {
   padding: 1.5rem 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
   position: sticky;
   top: var(--topbar-height);
   height: calc(100vh - var(--topbar-height));
@@ -246,15 +273,15 @@ body {
 }
 
 .view-header h2 {
-  font-size: 1.6rem;
+  font-size: 1.55rem;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .view-desc {
   color: var(--text-secondary);
-  font-size: 0.95rem;
-  margin-top: 0.25rem;
+  font-size: 0.92rem;
+  margin-top: 0.2rem;
 }
 
 /* =========================================================
@@ -262,7 +289,7 @@ body {
    ========================================================= */
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 1.25rem;
   margin-bottom: 1.5rem;
 }
@@ -285,8 +312,8 @@ body {
 }
 
 .metric-icon {
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -310,7 +337,7 @@ body {
 }
 
 .metric-label {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -318,7 +345,7 @@ body {
 }
 
 .metric-value {
-  font-size: 1.4rem;
+  font-size: 1.35rem;
   font-weight: 700;
   margin-top: 0.15rem;
 }
@@ -358,7 +385,7 @@ body {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   gap: 1.5rem;
 }
 
@@ -391,6 +418,214 @@ body {
   position: relative;
   height: 280px;
   width: 100%;
+}
+
+/* =========================================================
+   AI FINANCIAL ADVISOR INTELLIGENCE STYLES
+   ========================================================= */
+.advisor-card {
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-surface) 100%);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.advisor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.advisor-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.advisor-score-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: var(--bg-surface);
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.score-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.score-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.advisor-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.advisor-mini-metric {
+  background-color: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mini-metric-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.mini-metric-val {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.mini-metric-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.advisor-analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.advisor-box {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+.critical-box {
+  border-left: 4px solid var(--danger);
+}
+
+.strength-box {
+  border-left: 4px solid var(--success);
+}
+
+.advice-box {
+  border-left: 4px solid var(--primary);
+}
+
+.advisor-box-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.advisor-box-title h4 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.alert-icon-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.danger-circle { background-color: var(--danger-bg); color: var(--danger); }
+.success-circle { background-color: var(--success-bg); color: var(--success); }
+.primary-circle { background-color: var(--primary-light); color: var(--primary); }
+
+.advisor-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.advisor-list li {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  position: relative;
+  padding-left: 1.1rem;
+}
+
+.advisor-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.critical-box li::before { color: var(--danger); }
+.strength-box li::before { color: var(--success); }
+
+.advisor-tips-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.advisor-tip-item {
+  background-color: var(--bg-hover);
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  display: flex;
+  gap: 0.75rem;
+}
+
+.tip-number {
+  background-color: var(--primary);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tip-content {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.tip-content strong {
+  color: var(--primary);
 }
 
 /* =========================================================
@@ -917,18 +1152,147 @@ body {
   cursor: pointer;
 }
 
-.card-danger {
-  border-color: rgba(239, 68, 68, 0.3);
-  background-color: var(--danger-bg);
-}
-
-.danger-title {
-  color: var(--danger);
-}
-
 /* Utilities */
 .hidden { display: none !important; }
 .muted-text { color: var(--text-muted); font-size: 0.85rem; }
+
+/* =========================================================
+   PRINTABLE REPORT (EXECUTIVE REPORT FORMAT & @MEDIA PRINT)
+   ========================================================= */
+.print-only-container {
+  display: none;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+  }
+
+  .top-bar,
+  .sidebar,
+  .bottom-nav,
+  .main-content,
+  .fab,
+  .modal-overlay,
+  .btn,
+  .icon-btn {
+    display: none !important;
+  }
+
+  .print-only-container {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #000000;
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+  }
+
+  .print-app-title {
+    font-size: 20pt;
+    font-weight: 800;
+    color: #1e1b4b;
+    letter-spacing: 1px;
+  }
+
+  .print-family-subtitle {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #333333;
+    margin-top: 2px;
+  }
+
+  .print-dev-sig {
+    font-size: 8pt;
+    color: #666666;
+    margin-top: 2px;
+  }
+
+  .print-report-meta {
+    text-align: right;
+    font-size: 9pt;
+    color: #333333;
+  }
+
+  .print-divider {
+    border: none;
+    border-top: 1px solid #cccccc;
+    margin: 15px 0;
+  }
+
+  .print-section {
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+  }
+
+  .print-section-title {
+    font-size: 12pt;
+    font-weight: 700;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+    color: #1e293b;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+    font-size: 9.5pt;
+  }
+
+  .print-table th,
+  .print-table td {
+    border: 1px solid #cbd5e1;
+    padding: 6px 8px;
+    text-align: left;
+  }
+
+  .print-table th {
+    background-color: #f1f5f9;
+    font-weight: 700;
+  }
+
+  .print-advisor-text-box {
+    border: 1px solid #cbd5e1;
+    background-color: #fafafa;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 9.5pt;
+    line-height: 1.45;
+  }
+
+  .print-advisor-text-box h4 {
+    margin: 8px 0 4px 0;
+    font-size: 10.5pt;
+    color: #1e1b4b;
+  }
+
+  .print-advisor-text-box ul {
+    margin-left: 20px;
+    margin-bottom: 8px;
+  }
+
+  .print-footer {
+    border-top: 1px solid #cccccc;
+    padding-top: 8px;
+    margin-top: 25px;
+    font-size: 8pt;
+    color: #777777;
+    display: flex;
+    justify-content: space-between;
+  }
+}
 
 /* =========================================================
    RESPONSIVE DESIGN (MOBILE & TABLET)
@@ -967,11 +1331,9 @@ body {
     padding: 1.25rem 1rem 5.5rem 1rem;
   }
   
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .stats-grid {
+  .dashboard-grid,
+  .stats-grid,
+  .advisor-analysis-grid {
     grid-template-columns: 1fr;
   }
   
@@ -980,5 +1342,9 @@ body {
     right: 1.2rem;
     width: 52px;
     height: 52px;
+  }
+
+  .app-main-title {
+    font-size: 1.1rem;
   }
 }

@@ -1,7 +1,8 @@
 /**
  * =========================================================
- * APLICACIÓN DE GESTIÓN DE FINANZAS FAMILIARES (Vanilla JS)
- * 100% Offline con Persistencia en LocalStorage y Respaldo JSON
+ * FAMIFINANZAS - GESTIÓN Y ASESOR FINANCIERO FAMILIAR
+ * Desarrollado por Alex Gómez Avendaño
+ * Vanilla JavaScript (ES6) - 100% Offline con LocalStorage
  * =========================================================
  */
 
@@ -13,7 +14,7 @@ class FinanceApp {
     // Estado inicial de la aplicación
     this.state = {
       settings: {
-        householdName: 'Familia Gómez',
+        householdName: 'Familia Gómez Rico',
         currency: '$',
       },
       people: [],
@@ -58,6 +59,9 @@ class FinanceApp {
       const raw = localStorage.getItem(this.STORAGE_KEY);
       if (raw) {
         this.state = JSON.parse(raw);
+        if (!this.state.settings.householdName) {
+          this.state.settings.householdName = 'Familia Gómez Rico';
+        }
         if (!this.state.currentMonth) this.state.currentMonth = this.getCurrentMonthString();
         if (!this.state.currentTab) this.state.currentTab = 'dashboard';
       } else {
@@ -80,21 +84,23 @@ class FinanceApp {
 
   loadDemoData() {
     this.state.settings = {
-      householdName: 'Familia Gómez',
+      householdName: 'Familia Gómez Rico',
       currency: '$',
     };
     
     this.state.people = [
-      { id: 'p1', name: 'Carlos Gómez', income: 3200, color: '#4F46E5' },
-      { id: 'p2', name: 'Ana Gómez', income: 2400, color: '#10B981' },
+      { id: 'p1', name: 'Alex Gómez', income: 3800, color: '#4F46E5' },
+      { id: 'p2', name: 'María Rico', income: 2800, color: '#10B981' },
     ];
 
     this.state.obligations = [
-      { id: 'ob1', name: 'Alquiler de Vivienda', category: 'Vivienda', type: 'expense', amount: 1200, responsible: 'shared' },
-      { id: 'ob2', name: 'Supermercado y Alimentos', category: 'Alimentación y Mercado', type: 'expense', amount: 800, responsible: 'shared' },
-      { id: 'ob3', name: 'Servicios de Luz, Agua e Internet', category: 'Servicios Públicos', type: 'expense', amount: 280, responsible: 'shared' },
-      { id: 'ob4', name: 'Crédito Vehículo', category: 'Pago de Deuda', type: 'debt', amount: 450, responsible: 'p1' },
-      { id: 'ob5', name: 'Fondo de Emergencia Familiar', category: 'Ahorro e Inversión', type: 'savings', amount: 500, responsible: 'shared' },
+      { id: 'ob1', name: 'Alquiler / Hipoteca Vivienda', category: 'Vivienda', type: 'expense', amount: 1400, responsible: 'shared' },
+      { id: 'ob2', name: 'Supermercado y Alimentación', category: 'Alimentación y Mercado', type: 'expense', amount: 950, responsible: 'shared' },
+      { id: 'ob3', name: 'Servicios Públicos (Luz, Agua, Gas, Net)', category: 'Servicios Públicos', type: 'expense', amount: 320, responsible: 'shared' },
+      { id: 'ob4', name: 'Transporte y Combustible', category: 'Transporte', type: 'expense', amount: 400, responsible: 'shared' },
+      { id: 'ob5', name: 'Crédito Vehicular', category: 'Pago de Deuda', type: 'debt', amount: 550, responsible: 'p1' },
+      { id: 'ob6', name: 'Fondo de Ahorro e Inversión', category: 'Ahorro e Inversión', type: 'savings', amount: 800, responsible: 'shared' },
+      { id: 'ob7', name: 'Póliza de Seguro Médico', category: 'Salud y Medicina', type: 'expense', amount: 250, responsible: 'p2' }
     ];
 
     this.state.payments = {};
@@ -138,7 +144,7 @@ class FinanceApp {
 
     // Navegación Sidebar y Bottom Nav
     document.querySelectorAll('.nav-item').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', () => {
         const tab = btn.getAttribute('data-tab');
         if (tab) this.switchTab(tab);
       });
@@ -232,7 +238,7 @@ class FinanceApp {
     if (el) el.textContent = formatted;
   }
 
-  // Cálculos Financieros
+  // Cálculos Financieros Generales
   getTotalIncome() {
     return this.state.people.reduce((acc, p) => acc + (parseFloat(p.income) || 0), 0);
   }
@@ -251,6 +257,12 @@ class FinanceApp {
     let totalSavings = 0;
     let totalDebts = 0;
 
+    let needsAmount = 0;
+    let wantsAmount = 0;
+
+    const needsCategories = ['Vivienda', 'Servicios Públicos', 'Alimentación y Mercado', 'Transporte', 'Salud y Medicina', 'Educación', 'Seguros'];
+    const wantsCategories = ['Entretenimiento', 'Varios'];
+
     this.state.obligations.forEach(ob => {
       const amount = parseFloat(ob.amount) || 0;
       if (ob.type === 'savings') {
@@ -259,11 +271,22 @@ class FinanceApp {
         totalDebts += amount;
       } else {
         totalExpenses += amount;
+        if (needsCategories.includes(ob.category)) {
+          needsAmount += amount;
+        } else {
+          wantsAmount += amount;
+        }
       }
     });
 
     const totalOutflow = totalExpenses + totalSavings + totalDebts;
     const remaining = totalIncome - totalOutflow;
+
+    const dtiRatio = totalIncome > 0 ? (totalDebts / totalIncome) * 100 : 0;
+    const savingsRatio = totalIncome > 0 ? (totalSavings / totalIncome) * 100 : 0;
+    const needsRatio = totalIncome > 0 ? (needsAmount / totalIncome) * 100 : 0;
+    const wantsRatio = totalIncome > 0 ? (wantsAmount / totalIncome) * 100 : 0;
+    const savingsAndDebtsRatio = totalIncome > 0 ? ((totalSavings + totalDebts) / totalIncome) * 100 : 0;
 
     return {
       totalIncome,
@@ -272,6 +295,124 @@ class FinanceApp {
       totalDebts,
       totalOutflow,
       remaining,
+      needsAmount,
+      wantsAmount,
+      dtiRatio,
+      savingsRatio,
+      needsRatio,
+      wantsRatio,
+      savingsAndDebtsRatio
+    };
+  }
+
+  // Motor Inteligente de Asesoría Financiera
+  runFinancialAdvisorEngine(calcs) {
+    const curr = this.state.settings.currency;
+    let score = 100;
+    const criticals = [];
+    const strengths = [];
+    const advice = [];
+
+    if (calcs.totalIncome === 0) {
+      return {
+        score: 0,
+        scoreLabel: 'Sin Datos',
+        criticals: ['No se han registrado ingresos familiares. Registre a los integrantes para activar el diagnóstico.'],
+        strengths: [],
+        advice: [{ title: 'Paso 1: Registre sus Ingresos', text: 'Agregue a los miembros del hogar en la pestaña "Personas" con sus respectivos ingresos mensuales.' }]
+      };
+    }
+
+    // 1. Evaluación del Balance Neto (Superávit / Déficit)
+    if (calcs.remaining < 0) {
+      score -= 35;
+      criticals.push(`Déficit Financiero de ${curr}${Math.abs(calcs.remaining).toLocaleString('es-ES', { minimumFractionDigits: 2 })} al mes. Los egresos superan el 100% de los ingresos.`);
+      advice.push({
+        title: 'Frenar el Déficit Inmediatamente',
+        text: `Se deben reducir gastos no esenciales en al menos ${curr}${Math.abs(calcs.remaining).toLocaleString('es-ES', { minimumFractionDigits: 2 })} mensuales o generar ingresos complementarios para evitar endeudamiento progresivo.`
+      });
+    } else if (calcs.remaining === 0) {
+      score -= 15;
+      criticals.push('Presupuesto al límite exacto (margen libre = 0). Cualquier imprevisto menor puede causar déficit.');
+    } else {
+      strengths.push(`Flujo de Caja Positivo: La familia cuenta con un excedente de ${curr}${calcs.remaining.toLocaleString('es-ES', { minimumFractionDigits: 2 })} mensuales después de cubrir todas sus obligaciones.`);
+    }
+
+    // 2. Evaluación de Carga de Deudas (DTI - Debt-to-Income)
+    if (calcs.dtiRatio > 40) {
+      score -= 25;
+      criticals.push(`Nivel Crítico de Deuda: El pago de deudas absorbe el ${calcs.dtiRatio.toFixed(1)}% de los ingresos totales (límite máximo seguro: 30-35%).`);
+      advice.push({
+        title: 'Estrategia de Amortización de Deudas',
+        text: 'Aplique el método "Bola de Nieve" (liquidar primero las deudas más pequeñas) o "Avalancha" (liquidar las de mayor tasa de interés). Evite adquirir nuevos créditos o cuotas de consumo.'
+      });
+    } else if (calcs.dtiRatio > 30) {
+      score -= 10;
+      criticals.push(`Nivel de Deuda Elevado: El ${calcs.dtiRatio.toFixed(1)}% de los ingresos se destina a deudas. Mantener monitoreo estricto.`);
+      advice.push({
+        title: 'Plan de Desendeudamiento',
+        text: 'Asigne un porcentaje del excedente mensual para adelantar pagos a capital de créditos vigentes y reducir el pago total de intereses.'
+      });
+    } else if (calcs.dtiRatio > 0) {
+      strengths.push(`Endeudamiento Saludable: Las deudas representan el ${calcs.dtiRatio.toFixed(1)}% de los ingresos, situándose dentro del margen prudencial (&le; 30%).`);
+    } else {
+      strengths.push('Hogar Libre de Deudas Financieras: El 100% de los ingresos se destina al sustento, bienestar y capitalización.');
+    }
+
+    // 3. Evaluación de Tasa de Ahorro e Inversión
+    if (calcs.savingsRatio >= 20) {
+      strengths.push(`Tasa de Ahorro Excelente: El hogar ahorra/invierte el ${calcs.savingsRatio.toFixed(1)}% de sus ingresos, cumpliendo la meta estándar de independencia financiera.`);
+    } else if (calcs.savingsRatio >= 10) {
+      strengths.push(`Hábito de Ahorro Positivo: El hogar destina el ${calcs.savingsRatio.toFixed(1)}% al ahorro.`);
+      advice.push({
+        title: 'Optimización de la Tasa de Ahorro',
+        text: `Intente incrementar gradualmente su ahorro del ${calcs.savingsRatio.toFixed(1)}% al 20% destinando una porción de los aumentos salariales o reduciendo gastos hormiga.`
+      });
+    } else if (calcs.savingsRatio > 0) {
+      score -= 10;
+      criticals.push(`Ahorro Insuficiente: Solo se destina el ${calcs.savingsRatio.toFixed(1)}% al ahorro. Se recomienda como mínimo el 10% al 20%.`);
+      advice.push({
+        title: 'Creación del Fondo de Emergencia',
+        text: 'La prioridad número 1 debe ser construir un fondo de reserva equivalente a 3 a 6 meses de gastos básicos familiares en un instrumento seguro y líquido.'
+      });
+    } else {
+      score -= 20;
+      criticals.push('No hay asignación de ahorro o inversión mensual registrada.');
+      advice.push({
+        title: 'Regla "Páguese a Usted Primero"',
+        text: `Reserve automáticamente al menos el 10% de los ingresos (${curr}${(calcs.totalIncome * 0.1).toLocaleString('es-ES', { minimumFractionDigits: 2 })}) al inicio de cada mes antes de ejecutar los demás gastos.`
+      });
+    }
+
+    // 4. Evaluación de Concentración de Gastos en Vivienda y Categorías
+    const housingObs = this.state.obligations.filter(o => o.category === 'Vivienda');
+    const housingTotal = housingObs.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
+    const housingRatio = calcs.totalIncome > 0 ? (housingTotal / calcs.totalIncome) * 100 : 0;
+
+    if (housingRatio > 35) {
+      score -= 10;
+      criticals.push(`Gasto de Vivienda Alto: Representa el ${housingRatio.toFixed(1)}% de los ingresos totales (lo ideal es mantenerlo por debajo del 30%).`);
+      advice.push({
+        title: 'Monitoreo de Costos Habitacionales',
+        text: 'Revise alternativas para optimizar servicios del hogar, renegociar contratos de servicios residenciales o evaluar refinanciación hipotecaria si aplica.'
+      });
+    } else if (housingRatio > 0) {
+      strengths.push(`Gasto Habitacional Adecuado: La vivienda representa un proporcionado ${housingRatio.toFixed(1)}% del presupuesto.`);
+    }
+
+    // 5. Comparativa con la Regla 50/30/20
+    advice.push({
+      title: 'Diagnóstico Estructural (Regla 50/30/20)',
+      text: `Su distribución actual es: Necesidades Básicas ${calcs.needsRatio.toFixed(1)}% (meta: &le; 50%), Estilo de Vida ${calcs.wantsRatio.toFixed(1)}% (meta: &le; 30%), Ahorros/Deudas ${calcs.savingsAndDebtsRatio.toFixed(1)}% (meta: &ge; 20%).`
+    });
+
+    score = Math.max(10, Math.min(100, score));
+
+    return {
+      score,
+      criticals,
+      strengths,
+      advice
     };
   }
 
@@ -312,6 +453,7 @@ class FinanceApp {
     this.renderObligations();
     this.renderPayments();
     this.renderSettings();
+    this.renderFinancialAdvisor();
     this.renderCharts();
   }
 
@@ -351,7 +493,7 @@ class FinanceApp {
       } else {
         pill.textContent = 'Finanzas Ajustadas';
         pill.classList.add('warning');
-        desc.textContent = 'Presupuesto dentro del límite sin margen amplio de holgura.';
+        desc.textContent = 'Presupuesto dentro del límite sin amplio margen de holgura.';
       }
     }
 
@@ -454,7 +596,6 @@ class FinanceApp {
       `;
     }).join('');
 
-    // Actualizar selects de responsables en filtros y modales
     this.updatePersonSelectOptions();
   }
 
@@ -475,7 +616,7 @@ class FinanceApp {
       let html = '';
 
       if (isFilter) {
-        html += '<option value="all">Todos</option><option value="shared">Compartido</option>';
+        html += '<option value="all">Todos</option><option value="shared">Compartido (Proporcional)</option>';
       } else if (isObligation) {
         html += '<option value="shared">Compartido (Dividido por % de ingresos)</option>';
       } else if (isPayment) {
@@ -630,15 +771,85 @@ class FinanceApp {
     }).join('');
   }
 
+  // Render Asesor Financiero Inteligente
+  renderFinancialAdvisor() {
+    const calcs = this.getCalculations();
+    const diagnosis = this.runFinancialAdvisorEngine(calcs);
+    const curr = this.state.settings.currency;
+
+    // Score
+    const scoreVal = document.getElementById('advisor-score-val');
+    if (scoreVal) {
+      scoreVal.textContent = `${diagnosis.score}/100`;
+      scoreVal.style.color = diagnosis.score >= 80 ? 'var(--success)' : (diagnosis.score >= 55 ? 'var(--warning)' : 'var(--danger)');
+    }
+
+    // Mini Metrics
+    const ruleVal = document.getElementById('metric-rule-val');
+    if (ruleVal) {
+      ruleVal.textContent = `${calcs.needsRatio.toFixed(0)}% / ${calcs.wantsRatio.toFixed(0)}% / ${calcs.savingsAndDebtsRatio.toFixed(0)}%`;
+    }
+
+    const dtiVal = document.getElementById('metric-dti-val');
+    if (dtiVal) {
+      dtiVal.textContent = `${calcs.dtiRatio.toFixed(1)}%`;
+      dtiVal.style.color = calcs.dtiRatio > 35 ? 'var(--danger)' : 'var(--text-primary)';
+    }
+
+    const savingsVal = document.getElementById('metric-savings-val');
+    if (savingsVal) {
+      savingsVal.textContent = `${calcs.savingsRatio.toFixed(1)}%`;
+      savingsVal.style.color = calcs.savingsRatio >= 15 ? 'var(--success)' : (calcs.savingsRatio > 0 ? 'var(--warning)' : 'var(--danger)');
+    }
+
+    const surplusVal = document.getElementById('metric-surplus-val');
+    if (surplusVal) {
+      surplusVal.textContent = `${curr}${calcs.remaining.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`;
+      surplusVal.style.color = calcs.remaining >= 0 ? 'var(--success)' : 'var(--danger)';
+    }
+
+    // Listas de Puntos Críticos y Fortalezas
+    const critList = document.getElementById('advisor-critical-list');
+    if (critList) {
+      if (diagnosis.criticals.length === 0) {
+        critList.innerHTML = '<li>No se detectaron alertas críticas en este periodo. ¡Excelente administración!</li>';
+      } else {
+        critList.innerHTML = diagnosis.criticals.map(c => `<li>${c}</li>`).join('');
+      }
+    }
+
+    const strList = document.getElementById('advisor-strength-list');
+    if (strList) {
+      if (diagnosis.strengths.length === 0) {
+        strList.innerHTML = '<li>Monitoreando ingresos y distribución de gastos para determinar fortalezas.</li>';
+      } else {
+        strList.innerHTML = diagnosis.strengths.map(s => `<li>${s}</li>`).join('');
+      }
+    }
+
+    // Consejos y Plan Estratégico
+    const adviceList = document.getElementById('advisor-advice-list');
+    if (adviceList) {
+      adviceList.innerHTML = diagnosis.advice.map((adv, idx) => `
+        <div class="advisor-tip-item">
+          <div class="tip-number">${idx + 1}</div>
+          <div class="tip-content">
+            <strong>${adv.title}:</strong> ${adv.text}
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+
   // Render Configuración
   renderSettings() {
     const nameInput = document.getElementById('setting-household-name');
     const currInput = document.getElementById('setting-currency');
-    const titleDisp = document.getElementById('app-title-display');
+    const familyDisp = document.getElementById('app-family-name-display');
 
-    if (nameInput) nameInput.value = this.state.settings.householdName || '';
+    if (nameInput) nameInput.value = this.state.settings.householdName || 'Familia Gómez Rico';
     if (currInput) currInput.value = this.state.settings.currency || '$';
-    if (titleDisp) titleDisp.textContent = this.state.settings.householdName || 'Finanzas Familiares';
+    if (familyDisp) familyDisp.textContent = this.state.settings.householdName || 'Familia Gómez Rico';
 
     document.querySelectorAll('.curr-sym').forEach(el => {
       el.textContent = this.state.settings.currency || '$';
@@ -658,14 +869,14 @@ class FinanceApp {
     if (id) {
       const p = this.state.people.find(x => x.id === id);
       if (!p) return;
-      title.textContent = 'Editar Persona';
+      title.textContent = 'Editar Integrante';
       idInput.value = p.id;
       nameInput.value = p.name;
       incomeInput.value = p.income;
       colorInput.value = p.color || '#4F46E5';
       colorVal.textContent = p.color || '#4F46E5';
     } else {
-      title.textContent = 'Agregar Persona';
+      title.textContent = 'Agregar Integrante';
       idInput.value = '';
       nameInput.value = '';
       incomeInput.value = '';
@@ -701,7 +912,7 @@ class FinanceApp {
   }
 
   deletePerson(id) {
-    if (!confirm('¿Está seguro de eliminar a esta persona? Se actualizarán los cálculos de participación.')) return;
+    if (!confirm('¿Está seguro de eliminar a este integrante? Se recalcularán automáticamente los aportes compartidos.')) return;
     this.state.people = this.state.people.filter(p => p.id !== id);
     this.saveState();
     this.render();
@@ -773,7 +984,6 @@ class FinanceApp {
   deleteObligation(id) {
     if (!confirm('¿Está seguro de eliminar esta obligación?')) return;
     this.state.obligations = this.state.obligations.filter(o => o.id !== id);
-    // Eliminar pagos asociados en el mes actual
     const month = this.state.currentMonth;
     if (this.state.payments[month]) {
       this.state.payments[month] = this.state.payments[month].filter(p => p.obligationId !== id);
@@ -911,7 +1121,7 @@ class FinanceApp {
     } else if (pay.attachment.type === 'application/pdf') {
       viewer.innerHTML = `<iframe src="${pay.attachment.data}"></iframe>`;
     } else {
-      viewer.innerHTML = `<p style="color: white;">Vista previa no disponible para este tipo de archivo. Use el botón de descarga.</p>`;
+      viewer.innerHTML = `<p style="color: white;">Vista previa no disponible para este formato. Use el botón de descarga.</p>`;
     }
 
     document.getElementById('modal-receipt-view').classList.add('active');
@@ -919,6 +1129,139 @@ class FinanceApp {
 
   closeModal(modalId) {
     document.getElementById(modalId)?.classList.remove('active');
+  }
+
+  // Generación de Informe Imprimible / PDF
+  generatePrintReport() {
+    const calcs = this.getCalculations();
+    const curr = this.state.settings.currency;
+    const diagnosis = this.runFinancialAdvisorEngine(calcs);
+
+    // 1. Encabezado del Reporte
+    const famEl = document.getElementById('print-family-name');
+    const monthEl = document.getElementById('print-report-month');
+    const dateEl = document.getElementById('print-report-date');
+
+    if (famEl) famEl.textContent = this.state.settings.householdName || 'Familia Gómez Rico';
+    if (monthEl) monthEl.textContent = this.formatMonthDisplay(this.state.currentMonth);
+    if (dateEl) dateEl.textContent = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    // 2. Tabla de Resumen
+    const summaryTbody = document.getElementById('print-summary-tbody');
+    if (summaryTbody) {
+      summaryTbody.innerHTML = `
+        <tr>
+          <td><strong>Ingresos Familiares Totales</strong></td>
+          <td><strong>${curr}${calcs.totalIncome.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</strong></td>
+          <td>100%</td>
+          <td>Base Presupuestal</td>
+        </tr>
+        <tr>
+          <td>Gastos Operativos Mensuales</td>
+          <td>${curr}${calcs.totalExpenses.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</td>
+          <td>${calcs.totalIncome > 0 ? ((calcs.totalExpenses / calcs.totalIncome) * 100).toFixed(1) : 0}%</td>
+          <td>${calcs.totalExpenses <= calcs.totalIncome * 0.7 ? 'Controlado' : 'Elevado'}</td>
+        </tr>
+        <tr>
+          <td>Pago de Deudas Financieras</td>
+          <td>${curr}${calcs.totalDebts.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</td>
+          <td>${calcs.dtiRatio.toFixed(1)}%</td>
+          <td>${calcs.dtiRatio <= 30 ? 'Saludable (&le;30%)' : 'Excedido (>30%)'}</td>
+        </tr>
+        <tr>
+          <td>Ahorro e Inversión Mensual</td>
+          <td>${curr}${calcs.totalSavings.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</td>
+          <td>${calcs.savingsRatio.toFixed(1)}%</td>
+          <td>${calcs.savingsRatio >= 15 ? 'Óptimo' : 'A Mejorar'}</td>
+        </tr>
+        <tr style="background-color: #f8fafc; font-weight: bold;">
+          <td>Balance Disponible / Superávit</td>
+          <td style="color: ${calcs.remaining >= 0 ? '#10b981' : '#ef4444'}">${curr}${calcs.remaining.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</td>
+          <td>${calcs.totalIncome > 0 ? ((calcs.remaining / calcs.totalIncome) * 100).toFixed(1) : 0}%</td>
+          <td>${calcs.remaining >= 0 ? 'Superávit Financiero' : 'Déficit'}</td>
+        </tr>
+      `;
+    }
+
+    // 3. Tabla de Integrantes
+    const peopleTbody = document.getElementById('print-people-tbody');
+    if (peopleTbody) {
+      if (this.state.people.length === 0) {
+        peopleTbody.innerHTML = '<tr><td colspan="3">Sin integrantes registrados</td></tr>';
+      } else {
+        peopleTbody.innerHTML = this.state.people.map(p => {
+          const share = calcs.totalIncome > 0 ? ((p.income / calcs.totalIncome) * 100).toFixed(1) : 0;
+          return `
+            <tr>
+              <td><strong>${p.name}</strong></td>
+              <td>${curr}${parseFloat(p.income).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</td>
+              <td>${share}% del ingreso total familiar</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    // 4. Tabla de Obligaciones y Pagos del Mes
+    const obTbody = document.getElementById('print-obligations-tbody');
+    if (obTbody) {
+      const monthPayments = this.state.payments[this.state.currentMonth] || [];
+      if (this.state.obligations.length === 0) {
+        obTbody.innerHTML = '<tr><td colspan="6">No hay obligaciones registradas</td></tr>';
+      } else {
+        obTbody.innerHTML = this.state.obligations.map(ob => {
+          const pay = monthPayments.find(p => p.obligationId === ob.id);
+          const status = pay && pay.status === 'paid' ? 'PAGADO' : 'PENDIENTE';
+          let respName = 'Compartido (% Proporcional)';
+          if (ob.responsible !== 'shared') {
+            const p = this.state.people.find(x => x.id === ob.responsible);
+            respName = p ? p.name : ob.responsible;
+          }
+          const typeLabel = ob.type === 'savings' ? 'Ahorro' : (ob.type === 'debt' ? 'Deuda' : 'Gasto');
+
+          return `
+            <tr>
+              <td><strong>${ob.name}</strong></td>
+              <td>${ob.category}</td>
+              <td>${typeLabel}</td>
+              <td>${curr}${parseFloat(ob.amount).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</td>
+              <td>${respName}</td>
+              <td style="font-weight: bold; color: ${status === 'PAGADO' ? '#10b981' : '#f59e0b'}">${status}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    // 5. Diagnóstico del Asesor
+    const advisorBox = document.getElementById('print-advisor-content');
+    if (advisorBox) {
+      advisorBox.innerHTML = `
+        <div style="margin-bottom: 10px;">
+          <strong>Puntaje de Salud Financiera:</strong> <span style="font-size: 11pt; font-weight: bold; color: ${diagnosis.score >= 80 ? '#10b981' : (diagnosis.score >= 55 ? '#f59e0b' : '#ef4444')}">${diagnosis.score} / 100</span>
+          &nbsp;&bull;&nbsp;
+          <strong>Distribución 50/30/20:</strong> Necesidades (${calcs.needsRatio.toFixed(0)}%), Estilo de Vida (${calcs.wantsRatio.toFixed(0)}%), Ahorro/Deuda (${calcs.savingsAndDebtsRatio.toFixed(0)}%)
+        </div>
+
+        <h4>Puntos Críticos y Alertas:</h4>
+        <ul>
+          ${diagnosis.criticals.length ? diagnosis.criticals.map(c => `<li>${c}</li>`).join('') : '<li>Ningún punto crítico detectado. Presupuesto balanceado.</li>'}
+        </ul>
+
+        <h4>Fortalezas del Hogar:</h4>
+        <ul>
+          ${diagnosis.strengths.length ? diagnosis.strengths.map(s => `<li>${s}</li>`).join('') : '<li>Generación de ingresos estables.</li>'}
+        </ul>
+
+        <h4>Plan de Acción y Recomendaciones Estratégicas:</h4>
+        <ul>
+          ${diagnosis.advice.map(a => `<li><strong>${a.title}:</strong> ${a.text}</li>`).join('')}
+        </ul>
+      `;
+    }
+
+    // Ejecutar impresión nativa
+    window.print();
   }
 
   // Configuración General
@@ -941,7 +1284,7 @@ class FinanceApp {
     const downloadAnchor = document.createElement('a');
     const dateStr = new Date().toISOString().slice(0, 10);
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `backup_finanzas_familiares_${dateStr}.json`);
+    downloadAnchor.setAttribute("download", `backup_famifinanzas_${dateStr}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -963,23 +1306,13 @@ class FinanceApp {
           this.render();
           alert('¡Copia de seguridad restaurada con éxito!');
         } else {
-          alert('El archivo no contiene un formato de respaldo válido de Finanzas Familiares.');
+          alert('El archivo no contiene un formato de respaldo válido de FAMIFINANZAS.');
         }
       } catch (err) {
         alert('Error al leer o procesar el archivo JSON: ' + err.message);
       }
     };
     reader.readAsText(file);
-  }
-
-  resetAllData() {
-    if (confirm('¿Está COMPLETAMENTE SEGURO de reiniciar todos los datos? Se borrará todo el historial y comprobantes guardados.')) {
-      localStorage.removeItem(this.STORAGE_KEY);
-      this.loadDemoData();
-      this.ensurePaymentsForCurrentMonth();
-      this.render();
-      alert('Los datos han sido restablecidos correctamente.');
-    }
   }
 
   // Gráficos Interactivos con Chart.js
@@ -1091,7 +1424,7 @@ class FinanceApp {
       }
     });
 
-    // 5. Statistics: Monthly Evolution (Mock last 6 months based on current values)
+    // 5. Statistics: Monthly Evolution
     const months = ['Hace 5 Meses', 'Hace 4 Meses', 'Hace 3 Meses', 'Hace 2 Meses', 'Mes Anterior', 'Mes Actual'];
     const incEvolution = [calcs.totalIncome, calcs.totalIncome, calcs.totalIncome, calcs.totalIncome, calcs.totalIncome, calcs.totalIncome];
     const expEvolution = [
