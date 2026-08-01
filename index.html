@@ -221,7 +221,7 @@
         <div class="view-header">
           <div>
             <h2>Obligaciones Mensuales</h2>
-            <p class="view-desc">Defina los gastos, deudas y metas de ahorro fijas o recurrentes.</p>
+            <p class="view-desc">Defina gastos, créditos con análisis de amortización y metas de ahorro.</p>
           </div>
           <button class="btn btn-primary" onclick="app.openObligationModal()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -258,7 +258,7 @@
         </div>
 
         <div id="obligations-cards-grid" class="cards-grid">
-          <!-- Tarjetas de obligaciones -->
+          <!-- Tarjetas de obligaciones con botón especial de Deuda -->
         </div>
       </section>
 
@@ -301,7 +301,7 @@
           </div>
           <button class="btn btn-primary" onclick="app.generatePrintReport()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-            <span>Generar Informe Imprimible (PDF)</span>
+            <span>Generar Informe General (PDF)</span>
           </button>
         </div>
 
@@ -534,53 +534,130 @@
     </div>
   </div>
 
-  <!-- Modal Obligación -->
+  <!-- Modal Obligación (Con campos financieros de Deuda condicionales) -->
   <div id="modal-obligation" class="modal-overlay">
-    <div class="modal-card">
+    <div class="modal-card modal-lg">
       <div class="modal-header">
         <h3 id="modal-obligation-title">Agregar Obligación</h3>
         <button class="icon-btn modal-close" onclick="app.closeModal('modal-obligation')">&times;</button>
       </div>
       <form id="form-obligation" onsubmit="app.saveObligation(event)">
         <input type="hidden" id="ob-id">
-        <div class="form-group">
-          <label for="ob-name">Nombre / Concepto:</label>
-          <input type="text" id="ob-name" class="form-input" placeholder="Ej: Alquiler de Vivienda" required>
+        
+        <div class="form-row">
+          <div class="form-group flex-2">
+            <label for="ob-name">Nombre / Concepto:</label>
+            <input type="text" id="ob-name" class="form-input" placeholder="Ej: Crédito Hipotecario / Alquiler / Tarjeta" required>
+          </div>
+          <div class="form-group flex-1">
+            <label for="ob-type">Tipo de Obligación:</label>
+            <select id="ob-type" class="form-input" onchange="app.handleObligationTypeChange()" required>
+              <option value="expense">Gasto Habitual</option>
+              <option value="debt">Pago de Deuda / Crédito</option>
+              <option value="savings">Meta de Ahorro / Inversión</option>
+            </select>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="ob-category">Categoría:</label>
-          <select id="ob-category" class="form-input" required>
-            <option value="Vivienda">Vivienda</option>
-            <option value="Servicios Públicos">Servicios Públicos</option>
-            <option value="Alimentación y Mercado">Alimentación y Mercado</option>
-            <option value="Transporte">Transporte</option>
-            <option value="Salud y Medicina">Salud y Medicina</option>
-            <option value="Educación">Educación</option>
-            <option value="Entretenimiento">Entretenimiento</option>
-            <option value="Seguros">Seguros</option>
-            <option value="Pago de Deuda">Pago de Deuda</option>
-            <option value="Ahorro e Inversión">Ahorro e Inversión</option>
-            <option value="Varios">Varios</option>
-          </select>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="ob-category">Categoría:</label>
+            <select id="ob-category" class="form-input" required>
+              <option value="Vivienda">Vivienda</option>
+              <option value="Servicios Públicos">Servicios Públicos</option>
+              <option value="Alimentación y Mercado">Alimentación y Mercado</option>
+              <option value="Transporte">Transporte</option>
+              <option value="Salud y Medicina">Salud y Medicina</option>
+              <option value="Educación">Educación</option>
+              <option value="Entretenimiento">Entretenimiento</option>
+              <option value="Seguros">Seguros</option>
+              <option value="Pago de Deuda">Pago de Deuda</option>
+              <option value="Ahorro e Inversión">Ahorro e Inversión</option>
+              <option value="Varios">Varios</option>
+            </select>
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="ob-responsible">Responsable:</label>
+            <select id="ob-responsible" class="form-input" required>
+              <option value="shared">Compartido (Dividido por % de ingresos)</option>
+            </select>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="ob-type">Tipo de Obligación:</label>
-          <select id="ob-type" class="form-input" required>
-            <option value="expense">Gasto Habitual</option>
-            <option value="debt">Pago de Deuda / Préstamo</option>
-            <option value="savings">Meta de Ahorro / Inversión</option>
-          </select>
+
+        <!-- SECCIÓN CONDICIONAL: MOTOR MATEMÁTICO FINANCIERO PARA DEUDAS -->
+        <div id="debt-specific-fields" class="debt-fields-box hidden">
+          <div class="debt-box-header">
+            <div class="debt-box-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+              <span>Parámetros Financieros del Crédito / Deuda</span>
+            </div>
+            <span class="debt-box-badge">Sistema Francés (Cuota Fija)</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="ob-debt-purpose">Motivo / Destino de la Deuda:</label>
+              <select id="ob-debt-purpose" class="form-input">
+                <option value="Crédito Hipotecario / Vivienda">Crédito Hipotecario / Vivienda</option>
+                <option value="Crédito Vehicular">Crédito Vehicular</option>
+                <option value="Libre Inversión / Personal">Libre Inversión / Personal</option>
+                <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
+                <option value="Crédito Educativo">Crédito Educativo</option>
+                <option value="Compra de Cartera">Compra de Cartera</option>
+                <option value="Préstamo Familiar">Préstamo Familiar</option>
+                <option value="Comercial / Negocio">Comercial / Negocio</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+
+            <div class="form-group flex-1">
+              <label for="ob-debt-principal">Monto del Préstamo / Capital (<span class="curr-sym">$</span>):</label>
+              <input type="number" step="0.01" id="ob-debt-principal" class="form-input" placeholder="Ej: 10000000">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="ob-debt-rate">Tasa de Interés (%):</label>
+              <input type="number" step="0.01" id="ob-debt-rate" class="form-input" placeholder="Ej: 18.5">
+            </div>
+
+            <div class="form-group flex-1">
+              <label for="ob-debt-rate-type">Tipo de Tasa de Interés:</label>
+              <select id="ob-debt-rate-type" class="form-input">
+                <option value="EA">Efectiva Anual (% E.A.)</option>
+                <option value="MV">Mensual Vencida (% M.V.)</option>
+                <option value="NA">Nominal Anual Mes Vencido (% N.A.M.V.)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="ob-debt-term">Plazo Total (Cuotas / Meses):</label>
+              <input type="number" id="ob-debt-term" class="form-input" placeholder="Ej: 48">
+            </div>
+
+            <div class="form-group flex-1">
+              <label for="ob-debt-paid-terms">Cuotas ya Pagadas:</label>
+              <input type="number" id="ob-debt-paid-terms" class="form-input" value="0" placeholder="0">
+            </div>
+          </div>
+
+          <div class="debt-auto-calc-bar">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="app.autoCalculateDebtQuota()">
+              ⚡ Calcular Cuota Fija Automática
+            </button>
+            <span id="debt-calc-hint" class="debt-calc-hint">Ingrese capital, tasa y plazo para autocalcular.</span>
+          </div>
         </div>
+
         <div class="form-group">
-          <label for="ob-amount">Monto Estimado (<span class="curr-sym">$</span>):</label>
+          <label for="ob-amount">Cuota Mensual Estimada (<span class="curr-sym">$</span>):</label>
           <input type="number" step="0.01" id="ob-amount" class="form-input" placeholder="0.00" required>
         </div>
-        <div class="form-group">
-          <label for="ob-responsible">Responsable:</label>
-          <select id="ob-responsible" class="form-input" required>
-            <option value="shared">Compartido (Dividido por % de ingresos)</option>
-          </select>
-        </div>
+
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-obligation')">Cancelar</button>
           <button type="submit" class="btn btn-primary">Guardar Obligación</button>
@@ -671,7 +748,149 @@
   </div>
 
   <!-- =========================================================
-       ESTRUCTURA DE INFORME IMPRIMIBLE (REPORTE FINANCIERO EJECUTIVO)
+       MODAL DE ANÁLISIS DE DEUDA, AMORTIZACIÓN Y SIMULADOR
+       ========================================================= -->
+  <div id="modal-debt-analysis" class="modal-overlay">
+    <div class="modal-card modal-xl">
+      <div class="modal-header">
+        <div class="debt-modal-header-titles">
+          <h3 id="debt-analysis-title">Informe de Crédito</h3>
+          <span id="debt-analysis-badge" class="item-badge badge-debt">Pago de Deuda</span>
+        </div>
+        <div class="debt-modal-header-actions">
+          <button class="btn btn-primary btn-sm" onclick="app.printCurrentDebtReport()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            <span>Imprimir Informe</span>
+          </button>
+          <button class="icon-btn modal-close" onclick="app.closeModal('modal-debt-analysis')">&times;</button>
+        </div>
+      </div>
+
+      <div class="debt-analysis-body">
+        <!-- Resumen de Métricas Financieras -->
+        <div class="debt-metrics-grid">
+          <div class="debt-stat-card">
+            <span class="debt-stat-label">Capital / Préstamo</span>
+            <span class="debt-stat-val" id="debt-kpi-principal">$0.00</span>
+            <span class="debt-stat-sub" id="debt-kpi-purpose">Destino</span>
+          </div>
+          <div class="debt-stat-card">
+            <span class="debt-stat-label">Tasa de Interés</span>
+            <span class="debt-stat-val" id="debt-kpi-rate">0.0%</span>
+            <span class="debt-stat-sub" id="debt-kpi-rate-monthly">Equivalente: 0.0% M.V.</span>
+          </div>
+          <div class="debt-stat-card">
+            <span class="debt-stat-label">Cuota Fija Mensual</span>
+            <span class="debt-stat-val" id="debt-kpi-quota">$0.00</span>
+            <span class="debt-stat-sub" id="debt-kpi-terms">0 de 0 cuotas</span>
+          </div>
+          <div class="debt-stat-card">
+            <span class="debt-stat-label">Total Intereses (Normal)</span>
+            <span class="debt-stat-val danger-text" id="debt-kpi-interest">$0.00</span>
+            <span class="debt-stat-sub" id="debt-kpi-total-cost">Costo total crédito: $0.00</span>
+          </div>
+        </div>
+
+        <!-- SIMULADOR INTERACTIVO DE ACELERACIÓN Y AHORRO -->
+        <div class="debt-simulator-card">
+          <div class="simulator-card-header">
+            <div class="simulator-title-group">
+              <span class="simulator-icon">🚀</span>
+              <div>
+                <h4>Simulador de Pago Acelerado (Abonos Extraordinarios a Capital)</h4>
+                <p class="simulator-sub">Estrategia para liquidar tu crédito más rápido y evitar pagar intereses al banco.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="simulator-controls-row">
+            <div class="simulator-input-group">
+              <label for="sim-extra-payment-input">¿Cuánto dinero adicional puedes abonar cada mes a capital?</label>
+              <div class="sim-input-wrapper">
+                <span class="sim-curr-prefix curr-sym">$</span>
+                <input type="number" id="sim-extra-payment-input" class="form-input sim-input" value="20000" step="5000" oninput="app.onDebtSimulatorInputChange(this.value)">
+              </div>
+            </div>
+
+            <div class="sim-quick-presets">
+              <span class="presets-label">Valores rápidos:</span>
+              <button type="button" class="btn-preset" onclick="app.setDebtSimulatorPreset(10000)">+10.000</button>
+              <button type="button" class="btn-preset active" onclick="app.setDebtSimulatorPreset(20000)">+20.000</button>
+              <button type="button" class="btn-preset" onclick="app.setDebtSimulatorPreset(50000)">+50.000</button>
+              <button type="button" class="btn-preset" onclick="app.setDebtSimulatorPreset(100000)">+100.000</button>
+              <button type="button" class="btn-preset" onclick="app.setDebtSimulatorPreset(200000)">+200.000</button>
+            </div>
+          </div>
+
+          <!-- BANNER DE IMPACTO Y RESULTADOS DEL SIMULADOR -->
+          <div class="sim-results-banner" id="sim-results-banner">
+            <div class="sim-result-kpi">
+              <div class="sim-kpi-icon">⚡</div>
+              <div class="sim-kpi-content">
+                <span class="sim-kpi-label">Reducción de Tiempo</span>
+                <span class="sim-kpi-main" id="sim-months-saved-text">¡Terminas 0 cuotas antes!</span>
+                <span class="sim-kpi-sub" id="sim-new-term-text">Pagas en 0 meses en lugar de 0</span>
+              </div>
+            </div>
+
+            <div class="sim-result-kpi highlight-success">
+              <div class="sim-kpi-icon">💰</div>
+              <div class="sim-kpi-content">
+                <span class="sim-kpi-label">Ahorro Neto en Intereses</span>
+                <span class="sim-kpi-main success-text" id="sim-interest-saved-val">$0.00</span>
+                <span class="sim-kpi-sub" id="sim-roi-text">Dinero que conservas en el bolsillo familiar</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRÁFICO COMPARATIVO DE CURVA DE AMORTIZACIÓN -->
+        <div class="content-card margin-top">
+          <div class="card-header">
+            <h4>Proyección de Saldo: Plan Normal vs. Plan con Abono Acelerado</h4>
+          </div>
+          <div class="chart-container" style="height: 240px;">
+            <canvas id="debt-amortization-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- TABLA DE AMORTIZACIÓN COMPLETA -->
+        <div class="content-card margin-top">
+          <div class="card-header debt-table-header-row">
+            <h4>Tabla de Amortización Mensual (Desglose Cuota a Cuota)</h4>
+            <div class="debt-table-tabs">
+              <button class="table-tab-btn active" id="tab-btn-accelerated" onclick="app.switchDebtScheduleView('accelerated')">Plan Acelerado (Recomendado)</button>
+              <button class="table-tab-btn" id="tab-btn-normal" onclick="app.switchDebtScheduleView('normal')">Plan Normal (Sin Abono)</button>
+            </div>
+          </div>
+
+          <div class="table-responsive-box">
+            <table class="amortization-table">
+              <thead>
+                <tr>
+                  <th>N° Cuota</th>
+                  <th>Cuota Total</th>
+                  <th>Abono a Capital</th>
+                  <th>Pago Intereses</th>
+                  <th>Saldo Pendiente</th>
+                </tr>
+              </thead>
+              <tbody id="debt-amortization-tbody">
+                <!-- Filas de amortización inyectadas dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-debt-analysis')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       ESTRUCTURA DE INFORME IMPRIMIBLE GENERAL (REPORTE EJECUTIVO)
        Visible únicamente durante window.print()
        ========================================================= -->
   <div id="printable-report" class="print-only-container">
@@ -752,6 +971,65 @@
     <div class="print-footer">
       <span>FAMIFINANZAS &bull; Sistema de Gestión Financiera Familiar Offline</span>
       <span>Página 1 de 1</span>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       ESTRUCTURA DE INFORME IMPRIMIBLE DE DEUDA INDIVIDUAL
+       Visible únicamente durante impresión de deuda específica
+       ========================================================= -->
+  <div id="printable-debt-report" class="print-only-container">
+    <div class="print-report-header">
+      <div>
+        <h1 class="print-app-title">FAMIFINANZAS</h1>
+        <h2 class="print-family-subtitle">Familia Gómez Rico</h2>
+        <p class="print-dev-sig">Desarrollado por Alex Gómez Avendaño</p>
+      </div>
+      <div class="print-report-meta">
+        <div><strong>INFORME FINANCIERO DE CRÉDITO Y AMORTIZACIÓN</strong></div>
+        <div id="print-debt-date"></div>
+      </div>
+    </div>
+
+    <hr class="print-divider">
+
+    <section class="print-section">
+      <h3 class="print-section-title" id="print-debt-name-title">1. Resumen de la Obligación Crediticia</h3>
+      <table class="print-table">
+        <tbody id="print-debt-summary-tbody">
+          <!-- Inyectado dinámicamente -->
+        </tbody>
+      </table>
+    </section>
+
+    <section class="print-section">
+      <h3 class="print-section-title">2. Estrategia de Ahorro y Aceleración de Pago</h3>
+      <div class="print-advisor-text-box" id="print-debt-strategy-box">
+        <!-- Inyectado dinámicamente -->
+      </div>
+    </section>
+
+    <section class="print-section">
+      <h3 class="print-section-title">3. Tabla de Amortización Proyectada</h3>
+      <table class="print-table" id="print-debt-schedule-table">
+        <thead>
+          <tr>
+            <th>Cuota #</th>
+            <th>Cuota Total</th>
+            <th>Capital</th>
+            <th>Intereses</th>
+            <th>Saldo Pendiente</th>
+          </tr>
+        </thead>
+        <tbody id="print-debt-schedule-tbody">
+          <!-- Inyectado dinámicamente -->
+        </tbody>
+      </table>
+    </section>
+
+    <div class="print-footer">
+      <span>FAMIFINANZAS &bull; Módulo de Ingeniería Financiera & Amortización</span>
+      <span>Página 1</span>
     </div>
   </div>
 
