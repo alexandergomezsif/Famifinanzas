@@ -1,6 +1,7 @@
 /* =========================================================
    FAMIFINANZAS - ESTILOS PRINCIPALES Y MODO IMPRESIÓN
    Desarrollado por Alex Gómez Avendaño
+   Ubicación: css/style.css
    ========================================================= */
 
 :root {
@@ -156,7 +157,29 @@ body {
 .top-bar-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
+}
+
+.topbar-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-md);
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  transition: all 0.2s ease;
+}
+
+.topbar-save-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45);
+  background: linear-gradient(135deg, #059669, #047857);
 }
 
 .month-pill-badge {
@@ -1177,7 +1200,8 @@ body {
   .fab,
   .modal-overlay,
   .btn,
-  .icon-btn {
+  .icon-btn,
+  .topbar-save-btn {
     display: none !important;
   }
 
@@ -1345,6 +1369,18 @@ body {
   }
 
   .app-main-title {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+  }
+
+  .topbar-save-btn span {
+    display: none;
+  }
+
+  .topbar-save-btn {
+    padding: 0.45rem 0.6rem;
+  }
+
+  .month-pill-badge {
+    display: none;
   }
 }

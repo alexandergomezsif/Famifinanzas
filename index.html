@@ -1,46 +1,60 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="light">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FAMIFINANZAS - Gestión Financiera Familiar</title>
-  <meta name="description" content="FAMIFINANZAS: Aplicación offline y moderna para la gestión de presupuesto, control de gastos y asesoría financiera familiar.">
-  <!-- Google Fonts: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- Chart.js CDN -->
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Chart.js para visualizaciones gráficas interactivas -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Top App Bar -->
+  <!-- ==========================================
+       HEADER PRINCIPAL CON LOGO, TITULO Y BOTÓN GUARDAR
+       ========================================== -->
   <header class="top-bar">
     <div class="top-bar-brand">
-      <div class="logo-icon" title="FAMIFINANZAS">
-        <!-- Modern Financial Shield & Growth Logo SVG -->
-        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"></path>
-          <path d="M12 7v10"></path>
-          <path d="M9 10l3-3 3 3"></path>
-          <circle cx="12" cy="14" r="1.5" fill="currentColor"></circle>
+      <div class="logo-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M12 8v8"/>
+          <path d="M8 12h8"/>
         </svg>
       </div>
       <div class="brand-titles">
         <h1 class="app-main-title">FAMIFINANZAS</h1>
-        <div class="app-family-subtitle" id="app-family-name-display">Familia Gómez Rico</div>
-        <div class="app-dev-signature">Desarrollado por Alex Gómez Avendaño</div>
+        <h2 class="app-family-subtitle" id="app-family-name-display">Familia Gómez Rico</h2>
+        <span class="app-dev-signature">Desarrollado por Alex Gómez Avendaño</span>
       </div>
     </div>
+
     <div class="top-bar-actions">
-      <span class="month-pill-badge" id="current-month-display">Mes Actual</span>
-      <button class="icon-btn" id="theme-toggle-btn" title="Cambiar Tema (Claro / Oscuro)" aria-label="Cambiar Tema">
-        <svg id="theme-icon-sun" class="hidden" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="5"></circle>
-          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+      <!-- Botón de Guardar / Descargar Respaldo JSON siempre visible -->
+      <button class="topbar-save-btn" onclick="app.exportBackup()" title="Descargar Respaldo JSON de datos">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
         </svg>
-        <svg id="theme-icon-moon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+        <span>Guardar JSON</span>
+      </button>
+
+      <span class="month-pill-badge" id="current-month-display">Cargando...</span>
+
+      <button id="theme-toggle-btn" class="icon-btn" title="Alternar Modo Oscuro / Claro" aria-label="Cambiar tema">
+        <svg id="theme-icon-sun" class="hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg id="theme-icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
         </svg>
       </button>
@@ -48,172 +62,170 @@
   </header>
 
   <div class="app-container">
-    <!-- Sidebar Navigation for Desktop -->
+    <!-- ==========================================
+         SIDEBAR DE NAVEGACIÓN DESKTOP
+         ========================================== -->
     <nav class="sidebar">
       <button class="nav-item active" data-tab="dashboard">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
         <span>Panel Principal</span>
       </button>
       <button class="nav-item" data-tab="people">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         <span>Personas</span>
       </button>
       <button class="nav-item" data-tab="obligations">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
         <span>Obligaciones</span>
       </button>
       <button class="nav-item" data-tab="payments">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-        <span>Pagos</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+        <span>Registro de Pagos</span>
       </button>
-      <button class="nav-item" data-tab="statistics">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-        <span>Estadísticas y Asesor</span>
+      <button class="nav-item" data-tab="stats">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        <span>Estadísticas & Asesor</span>
       </button>
       <button class="nav-item" data-tab="settings">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         <span>Configuración</span>
       </button>
     </nav>
 
-    <!-- Main Content Views -->
+    <!-- ==========================================
+         VISTAS PRINCIPALES DE LA APLICACIÓN
+         ========================================== -->
     <main class="main-content">
 
-      <!-- DASHBOARD VIEW -->
+      <!-- 1. DASHBOARD -->
       <section id="view-dashboard" class="tab-view active">
         <div class="view-header">
           <div>
-            <h2>Panel Financiero del Hogar</h2>
-            <p class="view-desc">Resumen general del presupuesto mensual, balance disponible y estado de pagos.</p>
+            <h2>Resumen del Mes</h2>
+            <p class="view-desc">Visión integral del balance financiero, metas y estado mensual.</p>
           </div>
         </div>
 
-        <!-- Summary Cards Grid -->
         <div class="metrics-grid">
           <div class="metric-card card-income">
             <div class="metric-icon">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
             </div>
             <div class="metric-info">
-              <span class="metric-label">Ingresos Mensuales</span>
-              <h3 class="metric-value" id="dash-income">$0.00</h3>
+              <span class="metric-label">Ingresos Totales</span>
+              <span class="metric-value" id="dash-income">$0.00</span>
             </div>
           </div>
 
           <div class="metric-card card-expense">
             <div class="metric-icon">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
             </div>
             <div class="metric-info">
-              <span class="metric-label">Gastos Mensuales</span>
-              <h3 class="metric-value" id="dash-expenses">$0.00</h3>
+              <span class="metric-label">Gastos Totales</span>
+              <span class="metric-value" id="dash-expenses">$0.00</span>
             </div>
           </div>
 
           <div class="metric-card card-remaining">
             <div class="metric-icon">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><line x1="12" y1="6" x2="12" y2="18"></line></svg>
             </div>
             <div class="metric-info">
-              <span class="metric-label">Dinero Restante</span>
-              <h3 class="metric-value" id="dash-remaining">$0.00</h3>
+              <span class="metric-label">Monto Restante</span>
+              <span class="metric-value" id="dash-remaining">$0.00</span>
             </div>
           </div>
 
           <div class="metric-card card-savings">
             <div class="metric-icon">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-3.5c1-.5 1.5-1 2-2.5V7.5C20 6 19.5 5 19 5z"></path></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
             </div>
             <div class="metric-info">
-              <span class="metric-label">Ahorro Mensual</span>
-              <h3 class="metric-value" id="dash-savings">$0.00</h3>
+              <span class="metric-label">Metas de Ahorro</span>
+              <span class="metric-value" id="dash-savings">$0.00</span>
             </div>
           </div>
 
           <div class="metric-card card-debt">
             <div class="metric-icon">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
             </div>
             <div class="metric-info">
-              <span class="metric-label">Deudas Mensuales</span>
-              <h3 class="metric-value" id="dash-debts">$0.00</h3>
+              <span class="metric-label">Pago de Deudas</span>
+              <span class="metric-value" id="dash-debts">$0.00</span>
             </div>
           </div>
 
-          <div class="metric-card card-status">
+          <div class="metric-card">
             <div class="metric-info full-width">
-              <span class="metric-label">Diagnóstico General</span>
+              <span class="metric-label">Estado de Salud Financiera</span>
               <div class="status-badge-container">
                 <span class="status-pill" id="dash-status-pill">Calculando...</span>
-                <span class="status-desc" id="dash-status-desc">Analizando relación del presupuesto</span>
+                <span class="status-desc" id="dash-status-desc"></span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Dashboard Body Content -->
         <div class="dashboard-grid">
-          <!-- Participation Cards -->
           <div class="content-card">
             <div class="card-header">
-              <h3>Ingresos y Aportes Familiares</h3>
-            </div>
-            <div id="dash-people-list" class="cards-stack">
-              <!-- Dynamically populated -->
-            </div>
-          </div>
-
-          <!-- Quick Charts -->
-          <div class="content-card">
-            <div class="card-header">
-              <h3>Distribución del Presupuesto</h3>
+              <h3>Distribución Presupuestal</h3>
             </div>
             <div class="chart-container">
               <canvas id="dash-chart"></canvas>
             </div>
           </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Aportes Familiares</h3>
+            </div>
+            <div id="dash-people-list" class="cards-stack">
+              <!-- Lista de personas -->
+            </div>
+          </div>
         </div>
 
-        <!-- Pending Obligations Quick List -->
         <div class="content-card margin-top">
           <div class="card-header">
-            <h3>Pagos Pendientes de este Mes</h3>
-            <button class="btn btn-secondary btn-sm" onclick="app.switchTab('payments')">Ver Todos los Pagos</button>
+            <h3>Obligaciones Pendientes del Mes</h3>
           </div>
           <div id="dash-pending-list" class="cards-grid">
-            <!-- Dynamically populated -->
+            <!-- Pagos pendientes -->
           </div>
         </div>
       </section>
 
-      <!-- PEOPLE VIEW -->
+      <!-- 2. PERSONAS -->
       <section id="view-people" class="tab-view">
         <div class="view-header">
           <div>
             <h2>Integrantes del Hogar</h2>
-            <p class="view-desc">Administre los miembros de la familia, sus ingresos y porcentaje proporcional automático.</p>
+            <p class="view-desc">Gestione los miembros de la familia y sus ingresos mensuales.</p>
           </div>
           <button class="btn btn-primary" onclick="app.openPersonModal()">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Agregar Persona
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>Agregar Persona</span>
           </button>
         </div>
 
         <div id="people-cards-grid" class="cards-grid">
-          <!-- Dynamically populated -->
+          <!-- Tarjetas de personas -->
         </div>
       </section>
 
-      <!-- OBLIGATIONS VIEW -->
+      <!-- 3. OBLIGACIONES -->
       <section id="view-obligations" class="tab-view">
         <div class="view-header">
           <div>
             <h2>Obligaciones Mensuales</h2>
-            <p class="view-desc">Gestione gastos fijos, pago de deudas y aportes al ahorro familiar.</p>
+            <p class="view-desc">Defina los gastos, deudas y metas de ahorro fijas o recurrentes.</p>
           </div>
           <button class="btn btn-primary" onclick="app.openObligationModal()">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Agregar Obligación
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>Agregar Obligación</span>
           </button>
         </div>
 
@@ -227,123 +239,116 @@
               <option value="Alimentación y Mercado">Alimentación y Mercado</option>
               <option value="Transporte">Transporte</option>
               <option value="Salud y Medicina">Salud y Medicina</option>
+              <option value="Educación">Educación</option>
+              <option value="Entretenimiento">Entretenimiento</option>
+              <option value="Seguros">Seguros</option>
               <option value="Pago de Deuda">Pago de Deuda</option>
               <option value="Ahorro e Inversión">Ahorro e Inversión</option>
-              <option value="Entretenimiento">Entretenimiento</option>
-              <option value="Educación">Educación</option>
-              <option value="Seguros">Seguros</option>
               <option value="Varios">Varios</option>
             </select>
           </div>
+
           <div class="filter-group">
             <label for="ob-filter-responsible">Responsable:</label>
             <select id="ob-filter-responsible" class="form-input">
               <option value="all">Todos</option>
               <option value="shared">Compartido (Proporcional)</option>
-              <!-- People dynamically inserted -->
             </select>
           </div>
         </div>
 
         <div id="obligations-cards-grid" class="cards-grid">
-          <!-- Dynamically populated -->
+          <!-- Tarjetas de obligaciones -->
         </div>
       </section>
 
-      <!-- PAYMENTS VIEW -->
+      <!-- 4. REGISTRO DE PAGOS -->
       <section id="view-payments" class="tab-view">
         <div class="view-header">
           <div>
-            <h2>Control de Pagos Mensuales</h2>
-            <p class="view-desc">Seguimiento de cumplimiento, fechas, quién pagó y comprobantes adjuntos.</p>
+            <h2>Control y Registro de Pagos</h2>
+            <p class="view-desc">Registre los pagos realizados, fechas, quién pagó y comprobantes.</p>
           </div>
           <div class="month-selector">
-            <button class="icon-btn" onclick="app.changeMonth(-1)" title="Mes Anterior">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            </button>
+            <button class="btn btn-secondary btn-sm" onclick="app.changeMonth(-1)">◀ Anterior</button>
             <input type="month" id="payments-month-input" class="form-input month-picker-input">
-            <button class="icon-btn" onclick="app.changeMonth(1)" title="Mes Siguiente">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </button>
+            <button class="btn btn-secondary btn-sm" onclick="app.changeMonth(1)">Siguiente ▶</button>
           </div>
         </div>
 
         <div class="filter-bar">
           <div class="filter-group">
-            <label for="pay-filter-status">Estado:</label>
+            <label for="pay-filter-status">Estado del Pago:</label>
             <select id="pay-filter-status" class="form-input">
-              <option value="all">Todos los Pagos</option>
-              <option value="pending">Solo Pendientes</option>
-              <option value="paid">Solo Pagados</option>
+              <option value="all">Todos</option>
+              <option value="pending">Pendientes</option>
+              <option value="paid">Pagados</option>
             </select>
           </div>
         </div>
 
         <div id="payments-cards-grid" class="cards-grid">
-          <!-- Dynamically populated -->
+          <!-- Lista de pagos por mes -->
         </div>
       </section>
 
-      <!-- STATISTICS & AI FINANCIAL ADVISOR VIEW -->
-      <section id="view-statistics" class="tab-view">
+      <!-- 5. ESTADÍSTICAS Y ASESOR FINANCIERO -->
+      <section id="view-stats" class="tab-view">
         <div class="view-header">
           <div>
-            <h2>Estadísticas y Asesor Financiero Inteligente</h2>
-            <p class="view-desc">Diagnóstico financiero profesional del hogar, ratios clave y recomendaciones para optimizar el presupuesto.</p>
+            <h2>Estadísticas & Asesor Financiero</h2>
+            <p class="view-desc">Análisis inteligente, comportamiento del gasto, diagnóstico y generación de informe.</p>
           </div>
-          <!-- Action: Generate Report / Print -->
           <button class="btn btn-primary" onclick="app.generatePrintReport()">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-            Generar Informe Imprimible (PDF)
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            <span>Generar Informe Imprimible (PDF)</span>
           </button>
         </div>
 
-        <!-- AI Financial Advisor Intelligence Engine Card -->
+        <!-- TARJETA DEL ASESOR FINANCIERO INTELIGENTE -->
         <div class="content-card advisor-card">
           <div class="advisor-header">
             <div class="advisor-badge">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-              <span>Diagnóstico del Asesor Experto en Finanzas</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+              <span>Diagnóstico del Asesor Financiero</span>
             </div>
             <div class="advisor-score-box">
-              <div class="score-label">Puntaje Financiero</div>
-              <div class="score-value" id="advisor-score-val">--/100</div>
+              <span class="score-label">Salud Financiera:</span>
+              <span class="score-value" id="advisor-score-val">100/100</span>
             </div>
           </div>
 
-          <!-- Key Financial Indicators (Rule 50-30-20, DTI, Savings Rate) -->
           <div class="advisor-metrics-row">
-            <div class="advisor-mini-metric" id="metric-rule-box">
-              <span class="mini-metric-label">Regla 50/30/20 (Necesidades/Estilo/Ahorro)</span>
-              <strong class="mini-metric-val" id="metric-rule-val">--</strong>
-              <small class="mini-metric-sub" id="metric-rule-sub">Meta recomendada: 50% / 30% / 20%</small>
+            <div class="advisor-mini-metric">
+              <span class="mini-metric-label">Regla 50 / 30 / 20</span>
+              <span class="mini-metric-val" id="metric-rule-val">0% / 0% / 0%</span>
+              <span class="mini-metric-sub">Necesidades / Deseos / Ahorro</span>
             </div>
-            <div class="advisor-mini-metric" id="metric-dti-box">
+            <div class="advisor-mini-metric">
               <span class="mini-metric-label">Carga de Deudas (DTI)</span>
-              <strong class="mini-metric-val" id="metric-dti-val">0%</strong>
-              <small class="mini-metric-sub" id="metric-dti-sub">Límite saludable: &le; 30%</small>
+              <span class="mini-metric-val" id="metric-dti-val">0.0%</span>
+              <span class="mini-metric-sub">Límite recomendado &le; 30%</span>
             </div>
-            <div class="advisor-mini-metric" id="metric-savings-box">
-              <span class="mini-metric-label">Tasa de Ahorro Mensual</span>
-              <strong class="mini-metric-val" id="metric-savings-val">0%</strong>
-              <small class="mini-metric-sub" id="metric-savings-sub">Recomendado: &ge; 20%</small>
+            <div class="advisor-mini-metric">
+              <span class="mini-metric-label">Tasa de Ahorro</span>
+              <span class="mini-metric-val" id="metric-savings-val">0.0%</span>
+              <span class="mini-metric-sub">Objetivo sugerido &ge; 20%</span>
             </div>
-            <div class="advisor-mini-metric" id="metric-surplus-box">
-              <span class="mini-metric-label">Margen Libre / Holgura</span>
-              <strong class="mini-metric-val" id="metric-surplus-val">$0.00</strong>
-              <small class="mini-metric-sub" id="metric-surplus-sub">Superávit disponible</small>
+            <div class="advisor-mini-metric">
+              <span class="mini-metric-label">Superávit Mensual</span>
+              <span class="mini-metric-val" id="metric-surplus-val">$0.00</span>
+              <span class="mini-metric-sub">Margen libre estimado</span>
             </div>
           </div>
 
-          <!-- Critical Findings & Strong Points -->
           <div class="advisor-analysis-grid">
             <div class="advisor-box critical-box">
               <div class="advisor-box-title">
                 <span class="alert-icon-circle danger-circle">!</span>
-                <h4>Puntos Críticos y Alertas a Vigilar</h4>
+                <h4>Puntos Críticos y Alertas</h4>
               </div>
               <ul id="advisor-critical-list" class="advisor-list">
-                <!-- Injected dynamically -->
+                <li>Analizando patrones de gasto...</li>
               </ul>
             </div>
 
@@ -353,24 +358,23 @@
                 <h4>Fortalezas y Estabilidad</h4>
               </div>
               <ul id="advisor-strength-list" class="advisor-list">
-                <!-- Injected dynamically -->
+                <li>Verificando solidez familiar...</li>
               </ul>
             </div>
           </div>
 
-          <!-- Strategic Advice & Next Steps -->
           <div class="advisor-box advice-box margin-top">
             <div class="advisor-box-title">
               <span class="alert-icon-circle primary-circle">💡</span>
-              <h4>Consejos Personalizados y Plan de Acción Estratégico</h4>
+              <h4>Consejos Estratégicos y Plan de Acción</h4>
             </div>
             <div id="advisor-advice-list" class="advisor-tips-stack">
-              <!-- Injected dynamically -->
+              <!-- Consejos dinámicos del Asesor -->
             </div>
           </div>
         </div>
 
-        <!-- Charts Grid -->
+        <!-- GRÁFICOS ESTADÍSTICOS -->
         <div class="stats-grid margin-top">
           <div class="content-card">
             <div class="card-header">
@@ -383,7 +387,7 @@
 
           <div class="content-card">
             <div class="card-header">
-              <h3>Distribución de Gastos por Categoría</h3>
+              <h3>Gastos por Categoría</h3>
             </div>
             <div class="chart-container">
               <canvas id="chart-expenses-by-category"></canvas>
@@ -401,7 +405,7 @@
 
           <div class="content-card">
             <div class="card-header">
-              <h3>Evolución Financiera Histórica</h3>
+              <h3>Evolución Mensual del Presupuesto</h3>
             </div>
             <div class="chart-container">
               <canvas id="chart-monthly-evolution"></canvas>
@@ -410,51 +414,52 @@
         </div>
       </section>
 
-      <!-- SETTINGS VIEW -->
+      <!-- 6. CONFIGURACIÓN -->
       <section id="view-settings" class="tab-view">
         <div class="view-header">
           <div>
-            <h2>Configuración del Hogar</h2>
-            <p class="view-desc">Configure datos de la familia, símbolo de moneda y exporte/importe sus copias de seguridad.</p>
+            <h2>Configuración del Sistema</h2>
+            <p class="view-desc">Ajuste los parámetros generales del hogar y administre sus copias de seguridad.</p>
           </div>
         </div>
 
         <div class="settings-stack">
-          <!-- Household Config -->
           <div class="content-card">
             <div class="card-header">
               <h3>Datos del Hogar</h3>
             </div>
             <form id="form-settings-general" onsubmit="app.saveGeneralSettings(event)">
               <div class="form-group">
-                <label for="setting-household-name">Nombre de la Familia</label>
-                <input type="text" id="setting-household-name" class="form-input" placeholder="ej. Familia Gómez Rico" required>
+                <label for="setting-household-name">Nombre de la Familia / Hogar:</label>
+                <input type="text" id="setting-household-name" class="form-input" placeholder="Ej: Familia Gómez Rico" required>
               </div>
+
               <div class="form-group">
-                <label for="setting-currency">Símbolo de Moneda</label>
-                <input type="text" id="setting-currency" class="form-input" placeholder="ej. $, €, S/, COP$, Mex$" required>
+                <label for="setting-currency">Símbolo de Moneda:</label>
+                <input type="text" id="setting-currency" class="form-input" style="max-width: 120px;" placeholder="$" required>
               </div>
+
               <button type="submit" class="btn btn-primary">Guardar Cambios</button>
             </form>
           </div>
 
-          <!-- Backup & Restore -->
           <div class="content-card">
             <div class="card-header">
               <h3>Copia de Seguridad y Restauración (100% Offline)</h3>
             </div>
-            <p class="card-text">Exporte toda la información (personas, obligaciones, historial de pagos y comprobantes adjuntos) en un único archivo JSON seguro para respaldo o transferirlo a otro equipo.</p>
-
+            <p class="card-text">
+              Descargue un archivo JSON con la totalidad de sus datos para conservarlo en su computadora o transferirlo a otro dispositivo.
+            </p>
             <div class="settings-action-row">
-              <button class="btn btn-secondary" onclick="app.exportBackup()">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                Exportar Backup JSON
+              <button class="btn btn-primary" onclick="app.exportBackup()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Descargar Copia JSON</span>
               </button>
 
               <label class="btn btn-secondary btn-file-label">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                Restaurar Backup JSON
-                <input type="file" id="backup-file-input" accept=".json" onchange="app.importBackup(event)" style="display: none;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <span>Restaurar Copia JSON</span>
+                <input type="file" id="import-file-input" accept=".json" class="hidden" onchange="app.importBackup(event)">
               </label>
             </div>
           </div>
@@ -464,46 +469,41 @@
     </main>
   </div>
 
-  <!-- Bottom Navigation for Mobile -->
+  <!-- BOTÓN FLOTANTE DE ACCIÓN RÁPIDA (FAB) -->
+  <button class="fab" onclick="app.handleFabClick()" title="Agregar nuevo registro">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+  </button>
+
+  <!-- BARRA DE NAVEGACIÓN MÓVIL INFERIOR -->
   <nav class="bottom-nav">
     <button class="nav-item active" data-tab="dashboard">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-      <span>Inicio</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      <span>Panel</span>
     </button>
     <button class="nav-item" data-tab="people">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
       <span>Personas</span>
     </button>
     <button class="nav-item" data-tab="obligations">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
       <span>Obligaciones</span>
     </button>
     <button class="nav-item" data-tab="payments">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"></rect></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
       <span>Pagos</span>
     </button>
-    <button class="nav-item" data-tab="statistics">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+    <button class="nav-item" data-tab="stats">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
       <span>Asesor</span>
-    </button>
-    <button class="nav-item" data-tab="settings">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle></svg>
-      <span>Ajustes</span>
     </button>
   </nav>
 
-  <!-- Contextual Floating Action Button -->
-  <button class="fab" id="global-fab" aria-label="Agregar Acción" onclick="app.handleFabClick()">
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19"></line>
-      <line x1="5" y1="12" x2="19" y2="12"></line>
-    </svg>
-  </button>
+  <!-- ==========================================
+       MODALES DE LA APLICACIÓN
+       ========================================== -->
 
-  <!-- MODALS -->
-
-  <!-- Modal: Person Form -->
-  <div class="modal-overlay" id="modal-person">
+  <!-- Modal Persona -->
+  <div id="modal-person" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
         <h3 id="modal-person-title">Agregar Integrante</h3>
@@ -512,18 +512,18 @@
       <form id="form-person" onsubmit="app.savePerson(event)">
         <input type="hidden" id="person-id">
         <div class="form-group">
-          <label for="person-name">Nombre Completo</label>
-          <input type="text" id="person-name" class="form-input" placeholder="ej. María Gómez" required>
+          <label for="person-name">Nombre Completo:</label>
+          <input type="text" id="person-name" class="form-input" placeholder="Ej: Alex Gómez" required>
         </div>
         <div class="form-group">
-          <label for="person-income">Ingreso Mensual (<span class="curr-sym">$</span>)</label>
-          <input type="number" step="0.01" min="0" id="person-income" class="form-input" placeholder="0.00" required>
+          <label for="person-income">Ingreso Mensual (<span class="curr-sym">$</span>):</label>
+          <input type="number" step="0.01" id="person-income" class="form-input" placeholder="0.00" required>
         </div>
         <div class="form-group">
-          <label for="person-color">Color Distintivo</label>
+          <label for="person-color">Color Identificador:</label>
           <div class="color-picker-wrapper">
             <input type="color" id="person-color" class="color-input" value="#4F46E5">
-            <span class="color-val-text" id="person-color-val">#4F46E5</span>
+            <span id="person-color-val">#4F46E5</span>
           </div>
         </div>
         <div class="modal-footer">
@@ -534,8 +534,8 @@
     </div>
   </div>
 
-  <!-- Modal: Obligation Form -->
-  <div class="modal-overlay" id="modal-obligation">
+  <!-- Modal Obligación -->
+  <div id="modal-obligation" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
         <h3 id="modal-obligation-title">Agregar Obligación</h3>
@@ -544,42 +544,41 @@
       <form id="form-obligation" onsubmit="app.saveObligation(event)">
         <input type="hidden" id="ob-id">
         <div class="form-group">
-          <label for="ob-name">Nombre de la Obligación</label>
-          <input type="text" id="ob-name" class="form-input" placeholder="ej. Arriendo, Servicios, Tarjeta Crédito, Ahorro" required>
+          <label for="ob-name">Nombre / Concepto:</label>
+          <input type="text" id="ob-name" class="form-input" placeholder="Ej: Alquiler de Vivienda" required>
         </div>
         <div class="form-group">
-          <label for="ob-category">Categoría</label>
+          <label for="ob-category">Categoría:</label>
           <select id="ob-category" class="form-input" required>
             <option value="Vivienda">Vivienda</option>
             <option value="Servicios Públicos">Servicios Públicos</option>
             <option value="Alimentación y Mercado">Alimentación y Mercado</option>
             <option value="Transporte">Transporte</option>
             <option value="Salud y Medicina">Salud y Medicina</option>
+            <option value="Educación">Educación</option>
+            <option value="Entretenimiento">Entretenimiento</option>
+            <option value="Seguros">Seguros</option>
             <option value="Pago de Deuda">Pago de Deuda</option>
             <option value="Ahorro e Inversión">Ahorro e Inversión</option>
-            <option value="Entretenimiento">Entretenimiento</option>
-            <option value="Educación">Educación</option>
-            <option value="Seguros">Seguros</option>
             <option value="Varios">Varios</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="ob-type">Clasificación de la Obligación</label>
+          <label for="ob-type">Tipo de Obligación:</label>
           <select id="ob-type" class="form-input" required>
-            <option value="expense">Gasto Operativo Estándar</option>
-            <option value="debt">Obligación de Deuda Financiera</option>
+            <option value="expense">Gasto Habitual</option>
+            <option value="debt">Pago de Deuda / Préstamo</option>
             <option value="savings">Meta de Ahorro / Inversión</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="ob-amount">Monto Mensual (<span class="curr-sym">$</span>)</label>
-          <input type="number" step="0.01" min="0.01" id="ob-amount" class="form-input" placeholder="0.00" required>
+          <label for="ob-amount">Monto Estimado (<span class="curr-sym">$</span>):</label>
+          <input type="number" step="0.01" id="ob-amount" class="form-input" placeholder="0.00" required>
         </div>
         <div class="form-group">
-          <label for="ob-responsible">Responsable del Pago</label>
+          <label for="ob-responsible">Responsable:</label>
           <select id="ob-responsible" class="form-input" required>
             <option value="shared">Compartido (Dividido por % de ingresos)</option>
-            <!-- People options dynamically inserted -->
           </select>
         </div>
         <div class="modal-footer">
@@ -590,172 +589,172 @@
     </div>
   </div>
 
-  <!-- Modal: Payment Details & Receipt -->
-  <div class="modal-overlay" id="modal-payment">
-    <div class="modal-card">
+  <!-- Modal Pago -->
+  <div id="modal-payment" class="modal-overlay">
+    <div class="modal-card modal-lg">
       <div class="modal-header">
-        <h3 id="modal-payment-title">Registrar Pago</h3>
+        <h3>Registrar / Modificar Pago</h3>
         <button class="icon-btn modal-close" onclick="app.closeModal('modal-payment')">&times;</button>
       </div>
       <form id="form-payment" onsubmit="app.savePayment(event)">
         <input type="hidden" id="pay-id">
         <div class="form-group">
-          <label>Obligación</label>
-          <div id="pay-ob-name-display" class="static-input-display">Arriendo</div>
-        </div>
-        <div class="form-group">
-          <label for="pay-status">Estado del Pago</label>
-          <select id="pay-status" class="form-input" required>
-            <option value="pending">Pendiente</option>
-            <option value="paid">Pagado</option>
-          </select>
+          <label>Obligación:</label>
+          <div id="pay-ob-name-display" class="static-input-display"></div>
         </div>
         <div class="form-row">
           <div class="form-group flex-1">
-            <label for="pay-date">Fecha de Pago</label>
+            <label for="pay-status">Estado:</label>
+            <select id="pay-status" class="form-input" required>
+              <option value="paid">Pagado</option>
+              <option value="pending">Pendiente</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label for="pay-amount">Monto Pagado (<span class="curr-sym">$</span>):</label>
+            <input type="number" step="0.01" id="pay-amount" class="form-input" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="pay-date">Fecha de Pago:</label>
             <input type="date" id="pay-date" class="form-input">
           </div>
           <div class="form-group flex-1">
-            <label for="pay-time">Hora</label>
+            <label for="pay-time">Hora de Pago:</label>
             <input type="time" id="pay-time" class="form-input">
           </div>
         </div>
         <div class="form-group">
-          <label for="pay-paid-by">Realizado Por</label>
+          <label for="pay-paid-by">Pagado Por:</label>
           <select id="pay-paid-by" class="form-input">
             <option value="">-- Seleccionar Persona --</option>
-            <!-- People options dynamically inserted -->
           </select>
         </div>
         <div class="form-group">
-          <label for="pay-amount">Monto Pagado (<span class="curr-sym">$</span>)</label>
-          <input type="number" step="0.01" min="0" id="pay-amount" class="form-input" required>
+          <label for="pay-notes">Notas / Comentarios:</label>
+          <textarea id="pay-notes" class="form-input form-textarea" rows="2" placeholder="Detalles de la transacción, número de factura o comprobante..."></textarea>
         </div>
         <div class="form-group">
-          <label for="pay-notes">Notas / Observaciones</label>
-          <textarea id="pay-notes" class="form-input form-textarea" rows="2" placeholder="ej. Transferencia electrónica N° 45892"></textarea>
-        </div>
-
-        <!-- Attachment Uploader -->
-        <div class="form-group">
-          <label>Comprobante de Pago (JPG, PNG, WEBP, PDF)</label>
+          <label>Comprobante de Pago (Foto / Factura / Recibo):</label>
           <div class="file-uploader-box">
-            <input type="file" id="pay-attachment-input" accept="image/jpeg,image/png,image/webp,application/pdf" onchange="app.handleFileUpload(event)" style="display:none;">
+            <input type="file" id="pay-attachment-input" accept="image/*,application/pdf" class="hidden" onchange="app.handleFileUpload(event)">
             <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('pay-attachment-input').click()">
-              Adjuntar Archivo de Comprobante
+              📁 Subir Comprobante (Imagen o PDF)
             </button>
-            <div id="attachment-preview" class="attachment-preview-area">
-              <span class="muted-text">Sin comprobante adjunto</span>
-            </div>
+            <div id="attachment-preview" class="attachment-preview-area"></div>
           </div>
         </div>
-
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-payment')">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Guardar Registro</button>
+          <button type="submit" class="btn btn-primary">Guardar Registro de Pago</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: Receipt Viewer -->
-  <div class="modal-overlay" id="modal-receipt-view">
+  <!-- Modal Visor de Comprobante -->
+  <div id="modal-receipt-view" class="modal-overlay">
     <div class="modal-card modal-lg">
       <div class="modal-header">
-        <h3 id="receipt-modal-title">Vista Previa de Comprobante</h3>
+        <h3 id="receipt-modal-title">Comprobante de Pago</h3>
         <button class="icon-btn modal-close" onclick="app.closeModal('modal-receipt-view')">&times;</button>
       </div>
       <div id="receipt-viewer-content" class="receipt-viewer-body">
-        <!-- Image or PDF viewer injected here -->
+        <!-- Imagen o iframe -->
       </div>
       <div class="modal-footer">
-        <a id="receipt-download-btn" class="btn btn-primary" download="comprobante">Descargar Archivo</a>
-        <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-receipt-view')">Cerrar</button>
+        <a id="receipt-download-btn" class="btn btn-primary btn-sm" download="comprobante">Descargar Archivo</a>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="app.closeModal('modal-receipt-view')">Cerrar</button>
       </div>
     </div>
   </div>
 
-  <!-- PRINTABLE EXECUTIVE REPORT CONTAINER (FOR PRINT / PDF) -->
+  <!-- =========================================================
+       ESTRUCTURA DE INFORME IMPRIMIBLE (REPORTE FINANCIERO EJECUTIVO)
+       Visible únicamente durante window.print()
+       ========================================================= -->
   <div id="printable-report" class="print-only-container">
     <div class="print-report-header">
-      <div class="print-header-brand">
+      <div>
         <h1 class="print-app-title">FAMIFINANZAS</h1>
         <h2 class="print-family-subtitle" id="print-family-name">Familia Gómez Rico</h2>
-        <div class="print-dev-sig">Desarrollado por Alex Gómez Avendaño</div>
+        <p class="print-dev-sig">Desarrollado por Alex Gómez Avendaño</p>
       </div>
       <div class="print-report-meta">
-        <div class="print-meta-item"><strong>Informe Mensual:</strong> <span id="print-report-month">--</span></div>
-        <div class="print-meta-item"><strong>Fecha de Emisión:</strong> <span id="print-report-date">--</span></div>
+        <div><strong>INFORME FINANCIERO MENSUAL</strong></div>
+        <div><strong>Periodo:</strong> <span id="print-report-month"></span></div>
+        <div><strong>Fecha de Emisión:</strong> <span id="print-report-date"></span></div>
       </div>
     </div>
 
     <hr class="print-divider">
 
-    <div class="print-section">
+    <section class="print-section">
       <h3 class="print-section-title">1. Resumen Ejecutivo del Presupuesto</h3>
-      <table class="print-table">
+      <table class="print-table" id="print-summary-table">
         <thead>
           <tr>
             <th>Concepto</th>
-            <th>Monto Mensual</th>
-            <th>% de Ingresos</th>
-            <th>Estado / Diagnóstico</th>
+            <th>Monto</th>
+            <th>% del Total</th>
+            <th>Estado</th>
           </tr>
         </thead>
         <tbody id="print-summary-tbody">
-          <!-- Dynamically populated -->
+          <!-- Inyectado dinámicamente -->
         </tbody>
       </table>
-    </div>
+    </section>
 
-    <div class="print-section">
-      <h3 class="print-section-title">2. Aportes e Ingresos por Integrante</h3>
-      <table class="print-table">
+    <section class="print-section">
+      <h3 class="print-section-title">2. Aportes de los Integrantes del Hogar</h3>
+      <table class="print-table" id="print-people-table">
         <thead>
           <tr>
             <th>Integrante</th>
             <th>Ingreso Mensual</th>
-            <th>% Aporte Proporcional</th>
+            <th>% Participación en Gastos Compartidos</th>
           </tr>
         </thead>
         <tbody id="print-people-tbody">
-          <!-- Dynamically populated -->
+          <!-- Inyectado dinámicamente -->
         </tbody>
       </table>
-    </div>
+    </section>
 
-    <div class="print-section">
-      <h3 class="print-section-title">3. Estado de Obligaciones y Pagos del Mes</h3>
-      <table class="print-table">
+    <section class="print-section">
+      <h3 class="print-section-title">3. Detalle de Obligaciones y Estado de Pago</h3>
+      <table class="print-table" id="print-obligations-table">
         <thead>
           <tr>
-            <th>Obligación</th>
+            <th>Obligación / Concepto</th>
             <th>Categoría</th>
             <th>Tipo</th>
             <th>Monto</th>
             <th>Responsable</th>
-            <th>Estado de Pago</th>
+            <th>Estado</th>
           </tr>
         </thead>
         <tbody id="print-obligations-tbody">
-          <!-- Dynamically populated -->
+          <!-- Inyectado dinámicamente -->
         </tbody>
       </table>
-    </div>
+    </section>
 
-    <div class="print-section">
-      <h3 class="print-section-title">4. Diagnóstico y Recomendaciones del Asesor Experto</h3>
-      <div id="print-advisor-content" class="print-advisor-text-box">
-        <!-- Dynamically populated with complete AI financial evaluation -->
+    <section class="print-section">
+      <h3 class="print-section-title">4. Diagnóstico y Recomendaciones del Asesor Financiero</h3>
+      <div class="print-advisor-text-box" id="print-advisor-content">
+        <!-- Inyectado dinámicamente -->
       </div>
-    </div>
+    </section>
 
     <div class="print-footer">
-      <div>FAMIFINANZAS • Reporte Financiero Privado y Confidencial del Hogar</div>
-      <div>Desarrollado por Alex Gómez Avendaño</div>
+      <span>FAMIFINANZAS &bull; Sistema de Gestión Financiera Familiar Offline</span>
+      <span>Página 1 de 1</span>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

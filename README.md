@@ -1,51 +1,58 @@
-# 💰 Gestor de Finanzas Familiares (Personal & Family Finance App)
+# 💰 FAMIFINANZAS - Gestión Financiera Familiar
+> **Familia Gómez Rico**  
+> *Desarrollado por Alex Gómez Avendaño*
 
-Una aplicación web moderna, rápida y 100% offline desarrollada exclusivamente con **HTML5, CSS3 y JavaScript Vanilla (ES6)** para el control de presupuestos, gastos compartidos, ingresos proporcionales y comprobantes del hogar.
-
----
-
-## 🚀 Características Principales
-
-- **100% Offline & Privacidad Total:** Todos los datos se almacenan exclusivamente en el `LocalStorage` de tu navegador. Sin bases de datos externas ni servidores.
-- **Gestión de Personas e Ingresos:** Permite registrar los miembros de la familia con sus ingresos y calcula automáticamente el porcentaje de participación equitativo.
-- **Obligaciones y Gastos Recurrentes:** Clasificación en gastos fijos, pago de deudas y metas de ahorro. Soporte para gastos asignados a una persona o compartidos proporcionalmente.
-- **Control y Seguimiento de Pagos Mensuales:** Historial por mes, estado (Pendiente / Pagado), registro de fecha, hora, responsable y notas.
-- **Adjuntar y Visualizar Comprobantes:** Carga de recibos/facturas en formatos JPG, PNG, WEBP y PDF (convertidos a Base64 dentro del navegador) con visor integrado y botón de descarga.
-- **Estadísticas y Gráficos:** Visualización de Ingresos vs Gastos, distribución por categorías, relación ahorro/deuda y evolución histórica con Chart.js.
-- **Respaldo y Restauración JSON:** Exportación e importación completa de toda la información en un único archivo JSON.
-- **Tema Claro / Oscuro:** Modo oscuro y diseño responsivo adaptado para PC, tablets y smartphones.
+Una aplicación web moderna, intuitiva y **100% offline** diseñada para la administración mensual del presupuesto, control de aportes proporcionales entre integrantes, seguimiento de pagos con comprobantes y asesoría financiera inteligente basada en reglas económicas estándar (50/30/20, DTI y tasas de ahorro).
 
 ---
 
-## 📁 Estructura del Repositorio
+## 📁 Estructura del Proyecto
 
 ```text
 finanzas_familiares/
 │
-├── index.html            # Estructura principal, vistas y modales
-├── style.css             # Sistema de diseño, temas claro/oscuro y diseño responsivo
-├── app.js                # Lógica completa en Vanilla JavaScript ES6
-├── abrir_aplicacion.bat  # Acceso directo para abrir la app en Windows
-└── README.md             # Documentación del proyecto
+├── index.html               # Estructura principal y maquetación de vistas
+│
+├── css/
+│   └── style.css            # Estilos UI, Modo Oscuro/Claro y formato de impresión (@media print)
+│
+├── js/
+│   └── app.js               # Lógica de la SPA, Asesor Inteligente, LocalStorage y Gráficos
+│
+├── abrir_aplicacion.bat     # Lanzador de acceso directo para Windows
+└── README.md                # Documentación del proyecto
 ```
 
 ---
 
-## 🖥️ Cómo Ejecutar la Aplicación
+## ✨ Características Principales
 
-No requiere instalaciones complejas ni servidores Node.js/PHP:
+1. **🔒 100% Offline y Seguro:**
+   - No requiere servidores, internet ni base de datos externa.
+   - Todos los datos residen en el navegador local (`LocalStorage`).
+   - Se removieron opciones peligrosas de reseteo para garantizar la persistencia de datos.
 
-1. **Opción A (Doble clic):** Haz doble clic sobre el archivo `abrir_aplicacion.bat` o sobre `index.html`.
-2. **Opción B (Navegador):** Abre `index.html` en Google Chrome, Microsoft Edge, Mozilla Firefox o Safari.
-3. **Opción C (Live Server en VSCode):** Puedes abrir la carpeta con Visual Studio Code y usar la extensión *Live Server*.
+2. **💾 Botón de Respaldo JSON Siempre Visible:**
+   - Ubicado en la barra superior derecha (`Guardar JSON`), disponible permanentemente desde cualquier pestaña o módulo para descargar copias de seguridad inmediatas en 1 solo clic.
+
+3. **👥 Aportes Proporcionales de Integrantes:**
+   - Cálculo automático del porcentaje de participación económica de cada integrante sobre los gastos compartidos según sus ingresos mensuales.
+
+4. **📑 Control de Obligaciones y Pagos Mensuales:**
+   - Categorización en Gastos Habituales, Deudas y Ahorros.
+   - Registro de estado de pago (*Pagado / Pendiente*), fecha, hora, pagador y adjuntos de comprobantes (fotos o PDFs).
+
+5. **🧠 Asesor Financiero Inteligente:**
+   - Evaluación en tiempo real de la **Regla 50/30/20** (Necesidades, Estilo de Vida, Ahorro/Deudas).
+   - Cálculo de la relación **Deuda / Ingreso (DTI)** y **Tasa de Ahorro**.
+   - Detección de puntos críticos, fortalezas y plan de acción paso a paso.
+
+6. **🖨️ Generación de Informe Imprimible (PDF):**
+   - En el módulo de Estadísticas, genere reportes ejecutivos listos para imprimir o guardar como PDF en hoja limpia.
 
 ---
 
-## 💾 Respaldo de Datos
+## 🚀 Cómo Ejecutar la Aplicación
 
-- Para guardar una copia de tus registros, ve a la pestaña **Ajustes** y haz clic en **Exportar Backup JSON**.
-- Para transferir tus datos a otro dispositivo o navegador, usa **Restaurar Backup JSON** y selecciona tu archivo descargado.
-
----
-
-*Desarrollado con ❤️ para la gestión financiera familiar organizada y sencilla.*
+1. Haga doble clic en el archivo `abrir_aplicacion.bat` o abra directamente `index.html` en cualquier navegador web moderno (Google Chrome, Edge, Firefox, etc.).
+2. Para guardar una copia de seguridad en cualquier momento, presione el botón verde **"Guardar JSON"** en la barra superior.

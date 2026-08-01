@@ -2,6 +2,7 @@
  * =========================================================
  * FAMIFINANZAS - GESTIÓN Y ASESOR FINANCIERO FAMILIAR
  * Desarrollado por Alex Gómez Avendaño
+ * Ubicación: js/app.js
  * Vanilla JavaScript (ES6) - 100% Offline con LocalStorage
  * =========================================================
  */
