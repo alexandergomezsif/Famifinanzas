@@ -31,7 +31,7 @@
 
     <div class="top-bar-actions">
       <!-- Botón de Guardar Respaldo siempre visible -->
-      <button class="topbar-save-btn" onclick="app.exportBackup()" title="Descargar Respaldo JSON de datos">
+      <button class="topbar-save-btn" onclick="app.openBackupModal()" title="Guardar y Gestionar Respaldos JSON">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
           <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -448,20 +448,26 @@
               <h3>Copia de Seguridad y Restauración (100% Offline)</h3>
             </div>
             <p class="card-text">
-              Descargue un archivo JSON con la totalidad de sus datos para conservarlo en su computadora o transferirlo a otro dispositivo.
+              Descargue un archivo JSON con la totalidad de sus datos para conservarlo en su computadora o celular, transferirlo por WhatsApp o restaurar una copia previa.
             </p>
             <div class="settings-action-row">
-              <button class="btn btn-primary" onclick="app.exportBackup()">
+              <button type="button" class="btn btn-primary" onclick="app.exportBackup()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 <span>Descargar Copia JSON</span>
               </button>
 
-              <label class="btn btn-secondary btn-file-label">
+              <button type="button" class="btn btn-secondary" onclick="app.triggerImportFileInput()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                <span>Restaurar Copia JSON</span>
-                <input type="file" id="import-file-input" accept=".json" class="hidden" onchange="app.importBackup(event)">
-              </label>
+                <span>Subir Archivo .JSON</span>
+              </button>
+
+              <button type="button" class="btn btn-secondary" onclick="app.openBackupModal()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>Centro de Respaldos Completo</span>
+              </button>
             </div>
+            
+            <input type="file" id="import-file-input" accept=".json,application/json,text/plain,text/json,*/*" style="display: none;" onchange="app.importBackup(event)">
           </div>
         </div>
       </section>
@@ -477,24 +483,28 @@
   <!-- BARRA DE NAVEGACIÓN MÓVIL INFERIOR -->
   <nav class="bottom-nav">
     <button class="nav-item active" data-tab="dashboard">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
       <span>Panel</span>
     </button>
     <button class="nav-item" data-tab="people">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
       <span>Personas</span>
     </button>
     <button class="nav-item" data-tab="obligations">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
-      <span>Obligaciones</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
+      <span>Obliga.</span>
     </button>
     <button class="nav-item" data-tab="payments">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
       <span>Pagos</span>
     </button>
     <button class="nav-item" data-tab="stats">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
       <span>Asesor</span>
+    </button>
+    <button class="nav-item" data-tab="settings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <span>Ajustes</span>
     </button>
   </nav>
 
@@ -885,6 +895,75 @@
 
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-debt-analysis')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Copias de Seguridad & Restauración (Optimizado Celular y PC) -->
+  <div id="modal-backup" class="modal-overlay">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          <h3 style="margin: 0;">Centro de Respaldos JSON (100% Offline)</h3>
+        </div>
+        <button class="icon-btn modal-close" onclick="app.closeModal('modal-backup')">&times;</button>
+      </div>
+
+      <div class="backup-modal-body">
+        <!-- 1. Guardar y Exportar -->
+        <div class="backup-card-group">
+          <h4>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            1. Guardar / Exportar Datos
+          </h4>
+          <p>Descargue o comparta una copia exacta de sus registros (personas, obligaciones, deudas y pagos).</p>
+          <div class="backup-btns-grid">
+            <button type="button" class="btn btn-primary" onclick="app.exportBackup()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Descargar Archivo JSON</span>
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="app.shareBackup()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+              <span>Compartir / Enviar</span>
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="app.copyBackupToClipboard()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>Copiar Texto JSON</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Restaurar desde archivo -->
+        <div class="backup-card-group">
+          <h4>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            2. Cargar Archivo de Respaldo (.json)
+          </h4>
+          <p>Seleccione el archivo JSON desde el almacenamiento de su celular o computadora.</p>
+          <button type="button" class="btn btn-secondary" onclick="app.triggerImportFileInput()" style="width: 100%; justify-content: center; padding: 0.85rem;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <span style="font-size: 0.95rem; font-weight: 700;">📁 Seleccionar Archivo JSON de Respaldo</span>
+          </button>
+        </div>
+
+        <!-- 3. Restaurar pegando texto -->
+        <div class="backup-card-group">
+          <h4>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            3. O Pegar Contenido JSON Directamente
+          </h4>
+          <p>Si te enviaron el respaldo por WhatsApp o correo, pega aquí el texto completo para restaurar sin necesidad de buscar el archivo:</p>
+          <textarea id="backup-paste-text" class="backup-paste-textarea" placeholder='Pega aquí el código JSON (ej: {"people": [...], "obligations": [...]})'></textarea>
+          <button type="button" class="btn btn-secondary" onclick="app.importBackupFromText()" style="width: 100%; justify-content: center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>📥 Restaurar desde Texto Pegado</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-backup')">Cerrar</button>
       </div>
     </div>
   </div>

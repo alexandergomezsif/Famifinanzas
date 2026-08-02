@@ -1821,37 +1821,194 @@ class FinanceApp {
     this.render();
   }
 
-  // Backup JSON
-  exportBackup() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.state, null, 2));
-    const dlAnchorElem = document.createElement('a');
-    const today = new Date().toISOString().split('T')[0];
-    dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", `backup_famifinanzas_${today}.json`);
-    dlAnchorElem.click();
+  // =========================================================
+  // GESTIÓN DE RESPALDOS (JSON BACKUP, RESTORE & SHARE)
+  // =========================================================
+  openBackupModal() {
+    const m = document.getElementById('modal-backup');
+    if (m) m.classList.add('active');
   }
 
+  triggerImportFileInput() {
+    const input = document.getElementById('import-file-input');
+    if (input) {
+      input.value = ''; // Reset para permitir seleccionar el mismo archivo
+      input.click();
+    }
+  }
+
+  // Descargar Copia JSON (Compatible con PC y Móviles)
+  exportBackup() {
+    try {
+      const dataStr = JSON.stringify(this.state, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const today = new Date().toISOString().split('T')[0];
+      const fileName = `backup_famifinanzas_${today}.json`;
+      
+      const dlAnchorElem = document.createElement('a');
+      dlAnchorElem.href = url;
+      dlAnchorElem.download = fileName;
+      document.body.appendChild(dlAnchorElem);
+      dlAnchorElem.click();
+      document.body.removeChild(dlAnchorElem);
+      
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    } catch (err) {
+      console.error('Error al exportar JSON:', err);
+      alert('Hubo un inconveniente al generar la descarga. Intente la opción de copiar texto.');
+    }
+  }
+
+  // Compartir Respaldo vía Web Share API (WhatsApp, Drive, Email en Celular)
+  async shareBackup() {
+    const dataStr = JSON.stringify(this.state, null, 2);
+    const today = new Date().toISOString().split('T')[0];
+    const fileName = `backup_famifinanzas_${today}.json`;
+
+    if (navigator.share) {
+      try {
+        const file = new File([dataStr], fileName, { type: 'application/json' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: 'Respaldo Famifinanzas',
+            text: `Copia de seguridad Famifinanzas (${today})`,
+            files: [file]
+          });
+          return;
+        } else {
+          await navigator.share({
+            title: 'Respaldo Famifinanzas',
+            text: dataStr
+          });
+          return;
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.log('Compartir no disponible o cancelado:', err);
+          this.exportBackup();
+        }
+        return;
+      }
+    }
+    // Si no está disponible Web Share, descargar normal
+    this.exportBackup();
+  }
+
+  // Copiar todo el JSON al portapapeles
+  copyBackupToClipboard() {
+    try {
+      const dataStr = JSON.stringify(this.state, null, 2);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(dataStr).then(() => {
+          alert('¡Copia de seguridad copiada al portapapeles! Puedes pegarla en WhatsApp, un correo o tu bloc de notas.');
+        }).catch(() => {
+          this.fallbackCopyText(dataStr);
+        });
+      } else {
+        this.fallbackCopyText(dataStr);
+      }
+    } catch (err) {
+      alert('No se pudo copiar automáticamente. Use la opción de descargar archivo JSON.');
+    }
+  }
+
+  fallbackCopyText(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      alert('¡Copia de seguridad copiada al portapapeles!');
+    } catch (err) {
+      alert('No se pudo copiar automáticamente.');
+    }
+    document.body.removeChild(textArea);
+  }
+
+  // Restaurar Copia JSON desde Archivo Seleccionado
   importBackup(event) {
-    const file = event.target.files[0];
+    const file = event.target.files && event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const imported = JSON.parse(e.target.result);
-        if (imported.people && imported.obligations) {
-          this.state = imported;
-          this.saveState();
-          alert('¡Copia de seguridad restaurada correctamente!');
-          location.reload();
-        } else {
-          alert('El archivo seleccionado no tiene el formato válido de Famifinanzas.');
-        }
+        const content = e.target.result;
+        const imported = JSON.parse(content);
+        this.applyImportedState(imported);
       } catch (err) {
-        alert('Error al leer el archivo JSON.');
+        console.error('Error al leer JSON:', err);
+        alert('Error al leer el archivo JSON. Verifique que sea un archivo de respaldo válido.');
       }
     };
-    reader.readAsText(file);
+    reader.onerror = () => {
+      alert('Ocurrió un error al intentar abrir el archivo en su dispositivo.');
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  // Restaurar Copia JSON pegando el texto directamente
+  importBackupFromText() {
+    const textarea = document.getElementById('backup-paste-text');
+    if (!textarea) return;
+    const raw = textarea.value.trim();
+    if (!raw) {
+      alert('Por favor pegue el texto del respaldo JSON en el cuadro antes de restaurar.');
+      return;
+    }
+
+    try {
+      const imported = JSON.parse(raw);
+      this.applyImportedState(imported);
+    } catch (err) {
+      alert('El texto pegado no es un JSON válido. Asegúrese de copiar todo el contenido completo.');
+    }
+  }
+
+  // Validación y Aplicación de Estado Restaurado
+  applyImportedState(imported) {
+    if (!imported || typeof imported !== 'object') {
+      alert('El formato del archivo no es válido.');
+      return;
+    }
+
+    if (!Array.isArray(imported.people) || !Array.isArray(imported.obligations)) {
+      alert('El archivo no contiene la estructura requerida de Famifinanzas (integrantes y obligaciones).');
+      return;
+    }
+
+    const peopleCount = imported.people.length;
+    const obCount = imported.obligations.length;
+
+    const confirmMsg = `¿Está seguro de restaurar este respaldo?\n\n` +
+      `• Integrantes encontrados: ${peopleCount}\n` +
+      `• Obligaciones encontradas: ${obCount}\n\n` +
+      `Esta acción actualizará sus registros actuales.`;
+
+    if (!confirm(confirmMsg)) return;
+
+    // Asegurar estructura
+    this.state = {
+      people: imported.people || [],
+      obligations: imported.obligations || [],
+      payments: imported.payments || {},
+      settings: Object.assign({
+        householdName: 'Familia Gómez Rico',
+        currency: '$',
+        theme: 'light'
+      }, imported.settings || {}),
+      currentMonth: imported.currentMonth || this.getCurrentMonthString(),
+      currentTab: 'dashboard'
+    };
+
+    this.saveState();
+    alert(`¡Copia de seguridad restaurada exitosamente!\nSe cargaron ${peopleCount} personas y ${obCount} obligaciones.`);
+    location.reload();
   }
 
   closeModal(modalId) {
