@@ -1283,6 +1283,22 @@ class FinanceApp {
 
     this.handleObligationTypeChange();
     this.handleObligationStatusChange();
+
+    // Show/hide the quick toggle button in the modal footer
+    const toggleBtn = document.getElementById('ob-modal-toggle-btn');
+    if (toggleBtn) {
+      if (id) {
+        const ob = this.state.obligations.find(x => x.id === id);
+        const isFinished = ob?.status === 'finished';
+        toggleBtn.style.display = 'inline-flex';
+        toggleBtn.textContent = isFinished ? '\u21ba Reactivar Deuda' : '\u2713 Marcar Finalizada';
+        toggleBtn.className = isFinished ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-success';
+        toggleBtn.dataset.obId = id;
+      } else {
+        toggleBtn.style.display = 'none';
+      }
+    }
+
     modal.classList.add('active');
   }
 
@@ -1295,6 +1311,32 @@ class FinanceApp {
       finishedFields.classList.remove('hidden');
     } else {
       finishedFields.classList.add('hidden');
+    }
+  }
+
+  toggleStatusFromModal() {
+    const toggleBtn = document.getElementById('ob-modal-toggle-btn');
+    const id = toggleBtn?.dataset.obId;
+    if (!id) return;
+
+    const ob = this.state.obligations.find(o => o.id === id);
+    if (!ob) return;
+
+    const isCurrentlyFinished = ob.status === 'finished';
+    const newStatus = isCurrentlyFinished ? 'active' : 'finished';
+    const msg = isCurrentlyFinished
+      ? `¿Reactivar "${ob.name}"? Volverá a contar en el presupuesto mensual.`
+      : `¿Marcar "${ob.name}" como finalizada/pagada? Dejará de contar en el presupuesto pero quedará en el historial.`;
+
+    if (confirm(msg)) {
+      ob.status = newStatus;
+      if (newStatus === 'finished' && !ob.finishedDate) {
+        ob.finishedDate = new Date().toISOString().split('T')[0];
+      }
+      this.ensurePaymentsForCurrentMonth();
+      this.saveState();
+      this.closeModal('modal-obligation');
+      this.render();
     }
   }
 
