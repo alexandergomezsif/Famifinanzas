@@ -232,7 +232,7 @@
         <div class="filter-bar">
           <div class="filter-group">
             <label for="ob-filter-category">Categoría:</label>
-            <select id="ob-filter-category" class="form-input">
+            <select id="ob-filter-category" class="form-input" onchange="app.render()">
               <option value="all">Todas las Categorías</option>
               <option value="Vivienda">Vivienda</option>
               <option value="Servicios Públicos">Servicios Públicos</option>
@@ -250,9 +250,18 @@
 
           <div class="filter-group">
             <label for="ob-filter-responsible">Responsable:</label>
-            <select id="ob-filter-responsible" class="form-input">
+            <select id="ob-filter-responsible" class="form-input" onchange="app.render()">
               <option value="all">Todos</option>
               <option value="shared">Compartido (Proporcional)</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="ob-filter-status">Estado:</label>
+            <select id="ob-filter-status" class="form-input" onchange="app.render()">
+              <option value="all">Todas (Activas e Históricas)</option>
+              <option value="active" selected>Solo Activas / Vigentes</option>
+              <option value="finished">Solo Finalizadas / Pagadas</option>
             </select>
           </div>
         </div>
@@ -602,6 +611,36 @@
             <select id="ob-responsible" class="form-input" required>
               <option value="shared">Compartido (Dividido por % de ingresos)</option>
             </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="ob-status">Estado de la Obligación:</label>
+            <select id="ob-status" class="form-input" onchange="app.handleObligationStatusChange()" required>
+              <option value="active">Activa / Vigente</option>
+              <option value="finished">Finalizada / Histórica (Ya pagada)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- CAMPOS CONDICIONALES PARA DEUDA FINALIZADA -->
+        <div id="finished-specific-fields" class="debt-fields-box hidden" style="background-color: var(--success-bg); border-color: var(--success);">
+          <div class="debt-box-header">
+            <div class="debt-box-title" style="color: var(--success);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              <span>Trazabilidad de Obligación Finalizada</span>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="ob-finished-date">Fecha de Finalización (Opcional):</label>
+              <input type="date" id="ob-finished-date" class="form-input">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="ob-finished-notes">Notas / Comentarios Históricos (Opcional):</label>
+            <textarea id="ob-finished-notes" class="form-input form-textarea" rows="2" placeholder="Ej: Se canceló totalmente con un dinero extra, o condiciones del préstamo inicial..."></textarea>
           </div>
         </div>
 

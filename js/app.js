@@ -466,8 +466,25 @@ class FinanceApp {
     let needsExpenses = 0;
     let wantsExpenses = 0;
 
+    let totalFinishedDebts = 0;
+    let totalFinishedDebtAmount = 0;
+    let monthlyCashflowLiberated = 0;
+    const finishedDebtsList = [];
+
     this.state.obligations.forEach(ob => {
       const amount = parseFloat(ob.amount) || 0;
+      
+      if (ob.status === 'finished') {
+        if (ob.type === 'debt') {
+          totalFinishedDebts++;
+          const principal = ob.debtDetails?.principal || 0;
+          totalFinishedDebtAmount += (principal > 0 ? principal : amount);
+          monthlyCashflowLiberated += amount;
+          finishedDebtsList.push(ob);
+        }
+        return; // Skip from active budget calculations
+      }
+
       if (ob.type === 'savings') {
         totalSavings += amount;
       } else if (ob.type === 'debt') {
@@ -527,7 +544,11 @@ class FinanceApp {
       savingsAndDebtsRatio,
       statusText,
       statusClass,
-      statusDesc
+      statusDesc,
+      totalFinishedDebts,
+      totalFinishedDebtAmount,
+      monthlyCashflowLiberated,
+      finishedDebtsList
     };
   }
 
@@ -583,6 +604,25 @@ class FinanceApp {
       strengths.push('Hogar Libre de Deudas Financieras: El 100% de los ingresos se destina al sustento, bienestar y capitalización.');
     }
 
+    // Evaluación de Deudas Finalizadas (Elogio personalizado)
+    if (calcs.totalFinishedDebts > 0) {
+      score = Math.min(100, score + 10); // Bonus por desendeudamiento
+      let praiseDetails = '';
+      calcs.finishedDebtsList.forEach(ob => {
+        let personPraise = 'la familia';
+        if (ob.responsible !== 'shared') {
+          const p = this.state.people.find(x => x.id === ob.responsible);
+          if (p) personPraise = p.name;
+        }
+        praiseDetails += `<li>👏 <strong>${ob.name}:</strong> Felicidades a <strong>${personPraise}</strong> por cancelar esta deuda, liberando ${this.formatMoney(ob.amount)}/mes.</li>`;
+      });
+      
+      strengths.push(`
+        <strong>🏆 ¡Logro de Desendeudamiento!</strong> Han liquidado históricamente ${calcs.totalFinishedDebts} deudas por un valor estimado de ${this.formatMoney(calcs.totalFinishedDebtAmount)}, liberando un total de ${this.formatMoney(calcs.monthlyCashflowLiberated)} de flujo de caja mensual.
+        <ul style="margin-top: 5px; list-style: none; padding-left: 0;">${praiseDetails}</ul>
+      `);
+    }
+
     // 3. Evaluación de Tasa de Ahorro e Inversión
     if (calcs.savingsRatio >= 20) {
       strengths.push(`Tasa de Ahorro Excelente: El hogar ahorra/invierte el ${calcs.savingsRatio.toFixed(1)}% de sus ingresos, cumpliendo la meta estándar de independencia financiera.`);
@@ -626,9 +666,19 @@ class FinanceApp {
       this.state.payments[month] = [];
     }
 
-    const currentMonthPayments = this.state.payments[month];
+    let currentMonthPayments = this.state.payments[month];
+
+    // Remove pending payments for obligations that are now finished
+    currentMonthPayments = currentMonthPayments.filter(p => {
+      if (p.status !== 'pending') return true; // keep paid ones
+      const ob = this.state.obligations.find(o => o.id === p.obligationId);
+      if (ob && ob.status === 'finished') return false; // remove pending for finished
+      return true;
+    });
 
     this.state.obligations.forEach(ob => {
+      if (ob.status === 'finished') return; // Do not create new payments for finished obligations
+
       const exists = currentMonthPayments.some(p => p.obligationId === ob.id);
       if (!exists) {
         currentMonthPayments.push({
@@ -645,6 +695,7 @@ class FinanceApp {
       }
     });
 
+    this.state.payments[month] = currentMonthPayments;
     this.saveState();
   }
 
@@ -820,11 +871,16 @@ class FinanceApp {
 
     const catFilter = document.getElementById('ob-filter-category')?.value || 'all';
     const respFilter = document.getElementById('ob-filter-responsible')?.value || 'all';
+    const statusFilter = document.getElementById('ob-filter-status')?.value || 'active';
     const curr = this.state.settings.currency;
 
     let filtered = this.state.obligations.filter(ob => {
       if (catFilter !== 'all' && ob.category !== catFilter) return false;
       if (respFilter !== 'all' && ob.responsible !== respFilter) return false;
+      
+      const currentStatus = ob.status || 'active';
+      if (statusFilter !== 'all' && currentStatus !== statusFilter) return false;
+      
       return true;
     });
 
@@ -849,8 +905,9 @@ class FinanceApp {
         }
       }
 
-      const typeBadge = ob.type === 'savings' ? 'badge-savings' : (ob.type === 'debt' ? 'badge-debt' : 'badge-expense');
-      const typeLabel = ob.type === 'savings' ? 'Ahorro' : (ob.type === 'debt' ? 'Deuda' : 'Gasto');
+      const isFinished = ob.status === 'finished';
+      const typeBadge = isFinished ? 'badge-paid' : (ob.type === 'savings' ? 'badge-savings' : (ob.type === 'debt' ? 'badge-debt' : 'badge-expense'));
+      const typeLabel = isFinished ? '✓ Finalizada' : (ob.type === 'savings' ? 'Ahorro' : (ob.type === 'debt' ? 'Deuda' : 'Gasto'));
 
       let debtInfoBadge = '';
       let debtActionBtn = '';
@@ -874,8 +931,17 @@ class FinanceApp {
         `;
       }
 
+      let extraFinishedInfo = '';
+      if (isFinished && ob.finishedDate) {
+        extraFinishedInfo = `<div class="muted-text" style="font-size: 0.8rem; margin-top: 0.25rem;">Finalizada el: ${ob.finishedDate}</div>`;
+      }
+
+      const toggleActionBtn = isFinished
+        ? `<button class="btn btn-primary btn-sm" onclick="app.toggleObligationStatus('${ob.id}')">↺ Reactivar</button>`
+        : `<button class="btn btn-success btn-sm" onclick="app.toggleObligationStatus('${ob.id}')">✓ Finalizar</button>`;
+
       return `
-        <div class="item-card">
+        <div class="item-card ${isFinished ? 'item-card-finished' : ''}">
           <div>
             <div class="item-card-header">
               <div>
@@ -883,16 +949,18 @@ class FinanceApp {
                 <div class="item-title">${ob.name}</div>
                 <div class="item-cat">${ob.category}</div>
               </div>
-              <div class="item-amount">${curr}${parseFloat(ob.amount).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
+              <div class="item-amount" style="${isFinished ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${curr}${parseFloat(ob.amount).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
             </div>
             ${debtInfoBadge}
             <div class="item-details-row" style="margin-top: 0.75rem;">
               <div><strong>Responsable:</strong> ${respName}</div>
               ${respBreakdown ? `<div class="muted-text" style="font-size: 0.8rem; margin-top: 0.25rem;">${respBreakdown}</div>` : ''}
+              ${extraFinishedInfo}
             </div>
           </div>
-          <div class="item-footer-actions">
+          <div class="item-footer-actions" style="margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end;">
             ${debtActionBtn}
+            ${toggleActionBtn}
             <button class="btn btn-secondary btn-sm" onclick="app.openObligationModal('${ob.id}')">Editar</button>
             <button class="btn btn-danger btn-sm" onclick="app.deleteObligation('${ob.id}')">Eliminar</button>
           </div>
@@ -1158,6 +1226,9 @@ class FinanceApp {
     const typeInput = document.getElementById('ob-type');
     const amountInput = document.getElementById('ob-amount');
     const respInput = document.getElementById('ob-responsible');
+    const statusInput = document.getElementById('ob-status');
+    const finishedDateInput = document.getElementById('ob-finished-date');
+    const finishedNotesInput = document.getElementById('ob-finished-notes');
 
     // Campos de deuda
     const debtPurpose = document.getElementById('ob-debt-purpose');
@@ -1180,6 +1251,10 @@ class FinanceApp {
       typeInput.value = ob.type || 'expense';
       amountInput.value = ob.amount;
       respInput.value = ob.responsible;
+      
+      if (statusInput) statusInput.value = ob.status || 'active';
+      if (finishedDateInput) finishedDateInput.value = ob.finishedDate || '';
+      if (finishedNotesInput) finishedNotesInput.value = ob.finishedNotes || '';
 
       const dt = ob.debtDetails || {};
       if (debtPurpose) debtPurpose.value = dt.purpose || 'Libre Inversión / Personal';
@@ -1197,6 +1272,10 @@ class FinanceApp {
       typeInput.value = 'expense';
       amountInput.value = '';
       respInput.value = 'shared';
+      
+      if (statusInput) statusInput.value = 'active';
+      if (finishedDateInput) finishedDateInput.value = '';
+      if (finishedNotesInput) finishedNotesInput.value = '';
 
       if (debtPurpose) debtPurpose.value = 'Crédito Hipotecario / Vivienda';
       if (debtPrincipal) debtPrincipal.value = '';
@@ -1208,7 +1287,20 @@ class FinanceApp {
     }
 
     this.handleObligationTypeChange();
+    this.handleObligationStatusChange();
     modal.classList.add('active');
+  }
+
+  handleObligationStatusChange() {
+    const statusInput = document.getElementById('ob-status');
+    const finishedFields = document.getElementById('finished-specific-fields');
+    if (!statusInput || !finishedFields) return;
+
+    if (statusInput.value === 'finished') {
+      finishedFields.classList.remove('hidden');
+    } else {
+      finishedFields.classList.add('hidden');
+    }
   }
 
   saveObligation(e) {
@@ -1219,6 +1311,10 @@ class FinanceApp {
     const type = document.getElementById('ob-type').value;
     const amount = parseFloat(document.getElementById('ob-amount').value) || 0;
     const responsible = document.getElementById('ob-responsible').value;
+    
+    const status = document.getElementById('ob-status')?.value || 'active';
+    const finishedDate = document.getElementById('ob-finished-date')?.value || '';
+    const finishedNotes = document.getElementById('ob-finished-notes')?.value || '';
 
     if (!name || amount <= 0) return;
 
@@ -1231,30 +1327,45 @@ class FinanceApp {
       const paidTerms = parseInt(document.getElementById('ob-debt-paid-terms').value) || 0;
       const purpose = document.getElementById('ob-debt-purpose').value || 'Crédito';
 
-      debtDetails = {
-        purpose,
-        principal,
-        rate,
-        rateType,
-        term,
-        paidTerms
-      };
+      debtDetails = { purpose, principal, rate, rateType, term, paidTerms };
     }
+
+    const obData = { id: id || ('ob_' + Math.random().toString(36).substr(2, 9)), name, category, type, amount, responsible, status, finishedDate, finishedNotes, debtDetails };
 
     if (id) {
       const idx = this.state.obligations.findIndex(o => o.id === id);
       if (idx !== -1) {
-        this.state.obligations[idx] = { id, name, category, type, amount, responsible, debtDetails };
+        this.state.obligations[idx] = obData;
       }
     } else {
-      const newId = 'ob_' + Math.random().toString(36).substr(2, 9);
-      this.state.obligations.push({ id: newId, name, category, type, amount, responsible, debtDetails });
+      this.state.obligations.push(obData);
     }
 
     this.ensurePaymentsForCurrentMonth();
     this.saveState();
     this.closeModal('modal-obligation');
     this.render();
+  }
+
+  toggleObligationStatus(id) {
+    const ob = this.state.obligations.find(o => o.id === id);
+    if (!ob) return;
+
+    const isCurrentlyFinished = ob.status === 'finished';
+    const newStatus = isCurrentlyFinished ? 'active' : 'finished';
+    const msg = isCurrentlyFinished 
+      ? `¿Reactivar la obligación "${ob.name}"? Volverá a generar cobros mensuales.`
+      : `¿Marcar "${ob.name}" como finalizada/pagada? Dejará de generar cobros mensuales pero se conservará en el historial.`;
+
+    if (confirm(msg)) {
+      ob.status = newStatus;
+      if (newStatus === 'finished' && !ob.finishedDate) {
+        ob.finishedDate = new Date().toISOString().split('T')[0];
+      }
+      this.ensurePaymentsForCurrentMonth();
+      this.saveState();
+      this.render();
+    }
   }
 
   deleteObligation(id) {
