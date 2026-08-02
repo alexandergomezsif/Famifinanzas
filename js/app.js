@@ -1952,9 +1952,27 @@ class FinanceApp {
     reader.readAsText(file, 'UTF-8');
   }
 
-  // Restaurar Copia JSON pegando el texto directamente
+  // Restaurar Copia JSON pegando el texto directamente (desde el modal)
   importBackupFromText() {
     const textarea = document.getElementById('backup-paste-text');
+    if (!textarea) return;
+    const raw = textarea.value.trim();
+    if (!raw) {
+      alert('Por favor pegue el texto del respaldo JSON en el cuadro antes de restaurar.');
+      return;
+    }
+
+    try {
+      const imported = JSON.parse(raw);
+      this.applyImportedState(imported);
+    } catch (err) {
+      alert('El texto pegado no es un JSON válido. Asegúrese de copiar todo el contenido completo.');
+    }
+  }
+
+  // Restaurar Copia JSON pegando el texto directamente (desde la vista de ajustes)
+  importBackupFromSettingsText() {
+    const textarea = document.getElementById('settings-backup-paste-text');
     if (!textarea) return;
     const raw = textarea.value.trim();
     if (!raw) {
@@ -2224,3 +2242,13 @@ class FinanceApp {
 
 // Instanciar la aplicación globalmente
 const app = new FinanceApp();
+window.app = app;
+window.openBackupModal = () => app.openBackupModal();
+window.closeModal = (id) => app.closeModal(id);
+window.exportBackup = () => app.exportBackup();
+window.shareBackup = () => app.shareBackup();
+window.copyBackupToClipboard = () => app.copyBackupToClipboard();
+window.importBackup = (e) => app.importBackup(e);
+window.importBackupFromText = () => app.importBackupFromText();
+window.importBackupFromSettingsText = () => app.importBackupFromSettingsText();
+
