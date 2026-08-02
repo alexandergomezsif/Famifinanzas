@@ -936,10 +936,6 @@ class FinanceApp {
         extraFinishedInfo = `<div class="muted-text" style="font-size: 0.8rem; margin-top: 0.25rem;">Finalizada el: ${ob.finishedDate}</div>`;
       }
 
-      const toggleActionBtn = isFinished
-        ? `<button class="btn btn-primary btn-sm" onclick="app.toggleObligationStatus('${ob.id}')">↺ Reactivar</button>`
-        : `<button class="btn btn-success btn-sm" onclick="app.toggleObligationStatus('${ob.id}')">✓ Finalizar</button>`;
-
       return `
         <div class="item-card ${isFinished ? 'item-card-finished' : ''}">
           <div>
@@ -960,7 +956,6 @@ class FinanceApp {
           </div>
           <div class="item-footer-actions" style="margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end;">
             ${debtActionBtn}
-            ${toggleActionBtn}
             <button class="btn btn-secondary btn-sm" onclick="app.openObligationModal('${ob.id}')">Editar</button>
             <button class="btn btn-danger btn-sm" onclick="app.deleteObligation('${ob.id}')">Eliminar</button>
           </div>
