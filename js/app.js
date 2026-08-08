@@ -793,6 +793,48 @@ class FinanceApp {
     this.renderCharts();
   }
 
+  // ---- Helper: Calculate per-person financial summary ----
+  getPersonFinancialSummary(personId) {
+    const totalIncome = this.getTotalIncome();
+    const person = this.state.people.find(p => p.id === personId);
+    if (!person || totalIncome === 0) return { totalOwed: 0, totalPaid: 0, obligations: [] };
+
+    const shareRatio = parseFloat(person.income) / totalIncome;
+    const monthPayments = this.state.payments[this.state.currentMonth] || [];
+
+    let totalOwed = 0;
+    const obligations = [];
+
+    this.state.obligations
+      .filter(ob => (ob.status || 'active') === 'active')
+      .forEach(ob => {
+        const amount = parseFloat(ob.amount) || 0;
+        let personAmount = 0;
+        if (ob.responsible === personId) {
+          personAmount = amount;
+        } else if (ob.responsible === 'shared') {
+          personAmount = amount * shareRatio;
+        }
+        if (personAmount > 0) {
+          totalOwed += personAmount;
+          obligations.push({ name: ob.name, category: ob.category, amount: personAmount, id: ob.id });
+        }
+      });
+
+    let totalPaid = 0;
+    monthPayments.filter(pay => pay.status === 'paid' && pay.paidBy === personId).forEach(pay => {
+      totalPaid += parseFloat(pay.amount) || 0;
+    });
+    monthPayments.filter(pay => pay.status === 'paid' && (!pay.paidBy || pay.paidBy === 'shared')).forEach(pay => {
+      const ob = this.state.obligations.find(o => o.id === pay.obligationId);
+      if (ob && ob.responsible === 'shared') {
+        totalPaid += (parseFloat(pay.amount) || 0) * shareRatio;
+      }
+    });
+
+    return { totalOwed, totalPaid, obligations };
+  }
+
   renderPeople() {
     const grid = document.getElementById('people-cards-grid');
     if (!grid) return;
@@ -805,21 +847,60 @@ class FinanceApp {
 
     grid.innerHTML = this.state.people.map(p => {
       const share = this.getPersonSharePercentage(p.id);
+      const summary = this.getPersonFinancialSummary(p.id);
+      const balance = Math.max(0, summary.totalOwed - summary.totalPaid);
+      const balanceColor = balance <= 0 ? '#22c55e' : '#f59e0b';
+      const paidPct = summary.totalOwed > 0 ? Math.min(100, (summary.totalPaid / summary.totalOwed) * 100) : 0;
+
+      const obRows = summary.obligations.length > 0
+        ? summary.obligations.map(ob => `
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem;padding:0.2rem 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+              <span style="color:var(--text-muted)">${ob.name} <em style="font-size:0.72rem;">(${ob.category})</em></span>
+              <span>${curr}${ob.amount.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+            </div>`).join('')
+        : `<div style="font-size:0.8rem;color:var(--text-muted)">Sin obligaciones asignadas este mes.</div>`;
+
       return `
         <div class="person-card">
           <div class="person-card-header">
-            <div class="person-avatar" style="background-color: ${p.color};">
-              ${p.name.charAt(0).toUpperCase()}
-            </div>
+            <div class="person-avatar" style="background-color:${p.color};">${p.name.charAt(0).toUpperCase()}</div>
             <div class="person-meta">
               <h4>${p.name}</h4>
-              <span class="person-share">Participación en gastos compartidos: ${share.toFixed(1)}%</span>
+              <span class="person-share">Participación: ${share.toFixed(1)}% del ingreso familiar</span>
             </div>
           </div>
+
           <div class="person-income-row">
-            <span>Ingreso Mensual:</span>
-            <strong>${curr}${parseFloat(p.income).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</strong>
+            <span>💰 Ingreso Mensual:</span>
+            <strong>${curr}${parseFloat(p.income).toLocaleString('es-ES',{minimumFractionDigits:2})}</strong>
           </div>
+
+          <div style="margin:0.75rem 0;padding:0.75rem;background:rgba(255,255,255,0.04);border-radius:8px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.4rem;">
+              <span style="font-size:0.82rem;color:var(--text-muted)">📋 Total a pagar (mes):</span>
+              <strong>${curr}${summary.totalOwed.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.4rem;">
+              <span style="font-size:0.82rem;color:var(--text-muted)">✅ Ya pagado:</span>
+              <strong style="color:#22c55e;">${curr}${summary.totalPaid.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
+              <span style="font-size:0.82rem;color:var(--text-muted)">⏳ Pendiente:</span>
+              <strong style="color:${balanceColor};">${curr}${balance.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
+            </div>
+            <div style="background:rgba(255,255,255,0.1);border-radius:999px;height:6px;overflow:hidden;">
+              <div style="width:${paidPct.toFixed(1)}%;background:#22c55e;height:100%;border-radius:999px;transition:width 0.4s;"></div>
+            </div>
+            <div style="font-size:0.72rem;color:var(--text-muted);text-align:right;margin-top:3px;">${paidPct.toFixed(0)}% cubierto este mes</div>
+          </div>
+
+          <details style="margin-bottom:0.75rem;">
+            <summary style="font-size:0.82rem;cursor:pointer;color:var(--text-muted);user-select:none;padding:0.25rem 0;">
+              📂 Desglose de obligaciones (${summary.obligations.length})
+            </summary>
+            <div style="margin-top:0.5rem;padding:0.5rem;background:rgba(0,0,0,0.15);border-radius:6px;">${obRows}</div>
+          </details>
+
           <div class="person-actions">
             <button class="btn btn-secondary btn-sm" onclick="app.openPersonModal('${p.id}')">Editar</button>
             <button class="btn btn-danger btn-sm" onclick="app.deletePerson('${p.id}')">Eliminar</button>
