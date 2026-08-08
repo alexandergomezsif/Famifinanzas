@@ -660,6 +660,18 @@ class FinanceApp {
     };
   }
 
+  getTargetMonth(monthStr, timing) {
+    if (timing === 'vencido') {
+      const [year, month] = monthStr.split('-');
+      let d = new Date(parseInt(year), parseInt(month) - 1, 1);
+      d.setMonth(d.getMonth() - 1);
+      const y = d.getFullYear();
+      const m = (d.getMonth() + 1).toString().padStart(2, '0');
+      return `${y}-${m}`;
+    }
+    return monthStr;
+  }
+
   ensurePaymentsForCurrentMonth() {
     const month = this.state.currentMonth;
     if (!this.state.payments[month]) {
@@ -679,8 +691,20 @@ class FinanceApp {
     this.state.obligations.forEach(ob => {
       if (ob.status === 'finished') return; // Do not create new payments for finished obligations
 
-      const exists = currentMonthPayments.some(p => p.obligationId === ob.id);
-      if (!exists) {
+      const targetMonth = this.getTargetMonth(month, ob.paymentTiming || 'anticipado');
+      const targetPayments = this.state.payments[targetMonth] || [];
+      const hasPaidInTargetMonth = targetPayments.some(p => p.obligationId === ob.id && p.status === 'paid');
+
+      if (hasPaidInTargetMonth) {
+        // If the target month's bill is already paid, we don't need a pending item in the current month view
+        const pendingIdx = currentMonthPayments.findIndex(p => p.obligationId === ob.id && p.status === 'pending');
+        if (pendingIdx !== -1) currentMonthPayments.splice(pendingIdx, 1);
+        return;
+      }
+
+      // If not paid in target month, ensure a pending item exists in current month view so user can pay it
+      const existsInCurrent = currentMonthPayments.some(p => p.obligationId === ob.id);
+      if (!existsInCurrent) {
         currentMonthPayments.push({
           id: 'pay_' + Math.random().toString(36).substr(2, 9),
           obligationId: ob.id,
@@ -1310,6 +1334,7 @@ class FinanceApp {
     const amountInput = document.getElementById('ob-amount');
     const respInput = document.getElementById('ob-responsible');
     const statusInput = document.getElementById('ob-status');
+    const timingInput = document.getElementById('ob-payment-timing');
     const finishedDateInput = document.getElementById('ob-finished-date');
     const finishedNotesInput = document.getElementById('ob-finished-notes');
 
@@ -1336,6 +1361,7 @@ class FinanceApp {
       respInput.value = ob.responsible;
       
       if (statusInput) statusInput.value = ob.status || 'active';
+      if (timingInput) timingInput.value = ob.paymentTiming || 'anticipado';
       if (finishedDateInput) finishedDateInput.value = ob.finishedDate || '';
       if (finishedNotesInput) finishedNotesInput.value = ob.finishedNotes || '';
 
@@ -1357,6 +1383,7 @@ class FinanceApp {
       respInput.value = 'shared';
       
       if (statusInput) statusInput.value = 'active';
+      if (timingInput) timingInput.value = 'anticipado';
       if (finishedDateInput) finishedDateInput.value = '';
       if (finishedNotesInput) finishedNotesInput.value = '';
 
@@ -1438,6 +1465,7 @@ class FinanceApp {
     const responsible = document.getElementById('ob-responsible').value;
     
     const status = document.getElementById('ob-status')?.value || 'active';
+    const paymentTiming = document.getElementById('ob-payment-timing')?.value || 'anticipado';
     const finishedDate = document.getElementById('ob-finished-date')?.value || '';
     const finishedNotes = document.getElementById('ob-finished-notes')?.value || '';
 
@@ -1884,8 +1912,12 @@ class FinanceApp {
     const idx = monthPayments.findIndex(p => p.id === payId);
 
     if (idx !== -1) {
-      monthPayments[idx] = {
-        ...monthPayments[idx],
+      let payObj = monthPayments[idx];
+      const ob = this.state.obligations.find(o => o.id === payObj.obligationId);
+      const isVencido = ob && ob.paymentTiming === 'vencido';
+
+      const updatedPayObj = {
+        ...payObj,
         status,
         date: status === 'paid' ? date : '',
         time: status === 'paid' ? time : '',
@@ -1894,6 +1926,25 @@ class FinanceApp {
         notes,
         attachment: this.tempAttachment
       };
+
+      if (status === 'paid' && isVencido) {
+        // Move the payment to the previous month's ledger
+        const targetMonth = this.getTargetMonth(this.state.currentMonth, 'vencido');
+        if (!this.state.payments[targetMonth]) {
+          this.state.payments[targetMonth] = [];
+        }
+        // Check if there's already a payment for this obligation in the target month (shouldn't happen, but just in case)
+        const targetIdx = this.state.payments[targetMonth].findIndex(p => p.obligationId === ob.id);
+        if (targetIdx !== -1) {
+          this.state.payments[targetMonth][targetIdx] = updatedPayObj;
+        } else {
+          this.state.payments[targetMonth].push(updatedPayObj);
+        }
+        // Remove from current month's ledger
+        monthPayments.splice(idx, 1);
+      } else {
+        monthPayments[idx] = updatedPayObj;
+      }
     }
 
     this.saveState();
