@@ -822,13 +822,20 @@ class FinanceApp {
       });
 
     let totalPaid = 0;
-    monthPayments.filter(pay => pay.status === 'paid' && pay.paidBy === personId).forEach(pay => {
-      totalPaid += parseFloat(pay.amount) || 0;
-    });
-    monthPayments.filter(pay => pay.status === 'paid' && (!pay.paidBy || pay.paidBy === 'shared')).forEach(pay => {
+    
+    monthPayments.filter(pay => pay.status === 'paid').forEach(pay => {
       const ob = this.state.obligations.find(o => o.id === pay.obligationId);
-      if (ob && ob.responsible === 'shared') {
-        totalPaid += (parseFloat(pay.amount) || 0) * shareRatio;
+      if (!ob) return;
+
+      const amount = parseFloat(pay.amount) || 0;
+      
+      // Si el responsable de la obligación es la persona actual
+      if (ob.responsible === personId) {
+        totalPaid += amount;
+      } 
+      // Si la obligación es compartida, se le descuenta su parte proporcional
+      else if (ob.responsible === 'shared') {
+        totalPaid += amount * shareRatio;
       }
     });
 
