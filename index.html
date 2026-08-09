@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>FAMIFINANZAS - Gestión Financiera Familiar</title>
-  <link rel="stylesheet" href="css/style.css?v=3.3.0">
+  <link rel="stylesheet" href="css/style.css?v=3.4.0">
   <!-- Chart.js para visualizaciones gráficas interactivas -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -88,6 +88,10 @@
       <button class="nav-item" data-tab="stats">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
         <span>Estadísticas & Asesor</span>
+      </button>
+      <button class="nav-item" data-tab="savings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
+        <span>Ahorro</span>
       </button>
       <button class="nav-item" data-tab="settings">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -494,6 +498,28 @@
         </div>
       </section>
 
+      <!-- 6. AHORRO -->
+      <section id="view-savings" class="tab-view">
+        <div class="view-header">
+          <div>
+            <h2>Planeación de Ahorro Familiar</h2>
+            <p class="view-desc">Motor de ahorro progresivo para Alex &amp; Karen. Establece tu meta, elige la estrategia y sigue el progreso mes a mes.</p>
+          </div>
+          <button class="btn btn-primary" onclick="app.openSavingsPlanModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Establecer Meta de Ahorro
+          </button>
+        </div>
+
+        <!-- KPI Cards -->
+        <div id="savings-kpis" class="metrics-grid"></div>
+
+        <!-- Active plan area -->
+        <div id="savings-plan-area">
+          <p class="muted-text" style="text-align:center; padding: 3rem 0;">No hay un plan de ahorro activo. Haz clic en "Establecer Meta de Ahorro" para comenzar.</p>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -524,6 +550,10 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
       <span>Asesor</span>
     </button>
+    <button class="nav-item" data-tab="savings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
+      <span>Ahorro</span>
+    </button>
     <button class="nav-item" data-tab="settings">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       <span>Ajustes</span>
@@ -533,6 +563,105 @@
   <!-- ==========================================
        MODALES DE LA APLICACIÓN
        ========================================== -->
+
+  <!-- Modal Planeación de Ahorro -->
+  <div id="modal-savings-plan" class="modal-overlay">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3>🎯 Establecer Meta de Ahorro Familiar</h3>
+        <button class="icon-btn modal-close" onclick="app.closeModal('modal-savings-plan')">&times;</button>
+      </div>
+      <form id="form-savings-plan" onsubmit="app.saveSavingsPlan(event)">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="sp-name">Nombre del Plan:</label>
+            <input type="text" id="sp-name" class="form-input" placeholder="Ej: Fondo de Vacaciones" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="sp-goal">🎯 Meta Total de Ahorro ($):</label>
+            <input type="number" id="sp-goal" class="form-input" placeholder="Ej: 5000000" min="1" required oninput="app.previewSavingsPlan()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="sp-start">Fecha Inicio (Año-Mes):</label>
+            <input type="month" id="sp-start" class="form-input" required oninput="app.previewSavingsPlan()">
+          </div>
+          <div class="form-group flex-1">
+            <label for="sp-end">Fecha Objetivo (Año-Mes):</label>
+            <input type="month" id="sp-end" class="form-input" required oninput="app.previewSavingsPlan()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="sp-method">Método de Ahorro:</label>
+            <select id="sp-method" class="form-input" required onchange="app.onSavingsMethodChange()">
+              <option value="uniform">Uniforme (misma cuota todos los meses)</option>
+              <option value="arithmetic_inc">Aritmético Creciente (empieza bajo, sube)</option>
+              <option value="arithmetic_dec">Aritmético Decreciente (empieza alto, baja)</option>
+            </select>
+          </div>
+          <div class="form-group flex-1" id="sp-first-payment-group">
+            <label for="sp-first-payment">Ahorro Primer Mes ($):</label>
+            <input type="number" id="sp-first-payment" class="form-input" placeholder="Ej: 600000" min="0" oninput="app.previewSavingsPlan()">
+          </div>
+        </div>
+        <!-- Validation alert area -->
+        <div id="sp-validation-msg" style="display:none; padding: 0.75rem; border-radius: var(--radius-md); margin-bottom: 0.75rem; font-size: 0.875rem;"></div>
+        <!-- Preview Table -->
+        <div id="sp-preview-area" style="display:none; margin-bottom: 1rem;">
+          <h4 style="margin-bottom:0.5rem; font-size:0.9rem; color: var(--text-muted);">📋 Vista previa del Plan Mensual</h4>
+          <div style="overflow-x:auto;">
+            <table id="sp-preview-table" style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+              <thead>
+                <tr style="background: var(--primary-light); color: var(--primary);">
+                  <th style="padding:0.4rem 0.6rem; text-align:left;">Mes</th>
+                  <th style="padding:0.4rem 0.6rem; text-align:right;">Ahorro Familiar</th>
+                  <th style="padding:0.4rem 0.6rem; text-align:right;" id="sp-th-person1">Persona 1</th>
+                  <th style="padding:0.4rem 0.6rem; text-align:right;" id="sp-th-person2">Persona 2</th>
+                  <th style="padding:0.4rem 0.6rem; text-align:right;">Acumulado</th>
+                </tr>
+              </thead>
+              <tbody id="sp-preview-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-savings-plan')">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="sp-save-btn">💾 Guardar Plan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Registro de Ahorro Real -->
+  <div id="modal-register-saving" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>✅ Registrar Ahorro Real del Mes</h3>
+        <button class="icon-btn modal-close" onclick="app.closeModal('modal-register-saving')">&times;</button>
+      </div>
+      <div style="padding: 1rem 1.5rem;">
+        <p id="rsg-planned-display" style="font-size:0.9rem; color: var(--text-muted); margin-bottom:1rem;"></p>
+        <div class="form-group">
+          <label for="rsg-amount">Monto Real Ahorrado este Mes ($):</label>
+          <input type="number" id="rsg-amount" class="form-input" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label for="rsg-notes">Notas (Opcional):</label>
+          <input type="text" id="rsg-notes" class="form-input" placeholder="Ej: Ahorramos más gracias al bono...">
+        </div>
+        <input type="hidden" id="rsg-plan-id">
+        <input type="hidden" id="rsg-month">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-register-saving')">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="app.saveRealSaving()">Guardar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal Persona -->
   <div id="modal-person" class="modal-overlay">
@@ -1174,6 +1303,6 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=3.3.0"></script>
+  <script src="js/app.js?v=3.4.0"></script>
 </body>
 </html>
