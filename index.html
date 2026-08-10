@@ -10,7 +10,14 @@
   <!-- Favicon con logo de la familia -->
   <link rel="icon" type="image/png" href="logofamiliaicono.png">
   <link rel="apple-touch-icon" href="logofamiliaicono.png">
-  <link rel="stylesheet" href="css/style.css?v=3.4.1">
+  <!-- PWA: Manifest para instalar como app en Android/iOS -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Famifinanzas">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="stylesheet" href="css/style.css?v=3.5.0">
   <!-- Chart.js para visualizaciones gráficas interactivas -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -1302,6 +1309,6 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=3.4.0"></script>
+  <script src="js/app.js?v=3.5.0"></script>
 </body>
 </html>
