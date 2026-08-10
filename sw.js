@@ -1,26 +1,30 @@
 ﻿// =============================================
 // FAMIFINANZAS - SERVICE WORKER (PWA)
 // =============================================
-const CACHE_NAME = 'famifinanzas-v3.5.0';
+const CACHE_NAME = 'famifinanzas-v3.5.1';
 const ASSETS = [
-  '/Famifinanzas/',
-  '/Famifinanzas/index.html',
-  '/Famifinanzas/css/style.css',
-  '/Famifinanzas/js/app.js',
-  '/Famifinanzas/logofamiliaicono.png',
-  '/Famifinanzas/manifest.json',
+  './',
+  './index.html',
+  './css/style.css',
+  './js/app.js',
+  './logofamiliaicono.png',
+  './manifest.json',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'
 ];
 
-// Instalar y cachear recursos
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(cache => {
+      return Promise.all(
+        ASSETS.map(url => {
+          return cache.add(url).catch(err => console.error('SW Error:', url, err));
+        })
+      );
+    })
   );
   self.skipWaiting();
 });
 
-// Activar y limpiar caches viejas
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -30,9 +34,16 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Servir desde cache, con fallback a red
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    caches.match(event.request).then(cached => {
+      return cached || fetch(event.request).then(response => {
+        if (event.request.method === 'GET' && response.status === 200 && !event.request.url.startsWith('chrome-extension')) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+        }
+        return response;
+      });
+    })
   );
 });

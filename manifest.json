@@ -1,9 +1,9 @@
-﻿{
+{
   "name": "FAMIFINANZAS - Gestión Financiera Familiar",
   "short_name": "Famifinanzas",
   "description": "Motor de gestión financiera familiar para la Familia Gómez Rico",
-  "start_url": "/Famifinanzas/",
-  "scope": "/Famifinanzas/",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0f172a",
@@ -14,13 +14,19 @@
       "src": "logofamiliaicono.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "logofamiliaicono.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "logofamiliaicono.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
