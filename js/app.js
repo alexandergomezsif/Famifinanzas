@@ -159,6 +159,12 @@ class FinanceApp {
       try {
         const parsed = JSON.parse(saved);
         if (!parsed.currentMonth) parsed.currentMonth = this.getSystemMonth();
+        if (parsed.people) {
+          parsed.people.forEach(p => {
+            if (p.id === 'p_2' && p.name === 'Esposa') p.name = 'Karen (Esposa)';
+            if (p.id === 'p_1' && p.name === 'Alex Gómez') p.name = 'Alex (Esposo)';
+          });
+        }
         return parsed;
       } catch (e) {
         console.error('Error al recuperar datos locales:', e);
@@ -175,8 +181,8 @@ class FinanceApp {
       currentMonth: defaultMonth,
       currentTab: 'dashboard',
       people: [
-        { id: 'p_1', name: 'Alex Gómez', income: 4500000, color: '#4F46E5' },
-        { id: 'p_2', name: 'Esposa', income: 3200000, color: '#10B981' },
+        { id: 'p_1', name: 'Alex (Esposo)', income: 4500000, color: '#4F46E5' },
+        { id: 'p_2', name: 'Karen (Esposa)', income: 3200000, color: '#10B981' },
       ],
       obligations: [
         {
@@ -951,7 +957,8 @@ class FinanceApp {
     const selects = [
       document.getElementById('ob-filter-responsible'),
       document.getElementById('ob-responsible'),
-      document.getElementById('pay-paid-by')
+      document.getElementById('pay-paid-by'),
+      document.getElementById('sp-target-type')
     ];
 
     selects.forEach(select => {
@@ -959,6 +966,7 @@ class FinanceApp {
       const isFilter = select.id === 'ob-filter-responsible';
       const isObligation = select.id === 'ob-responsible';
       const isPayment = select.id === 'pay-paid-by';
+      const isSavingsTarget = select.id === 'sp-target-type';
 
       const currentVal = select.value;
       let html = '';
@@ -969,10 +977,16 @@ class FinanceApp {
         html += '<option value="shared">Compartido (Dividido por % de ingresos)</option>';
       } else if (isPayment) {
         html += '<option value="">-- Seleccionar Persona --</option>';
+      } else if (isSavingsTarget) {
+        html += '<option value="shared">👨‍👩‍👧 En Conjunto (Familiar - Aporte Proporcional)</option>';
       }
 
       this.state.people.forEach(p => {
-        html += `<option value="${p.id}">${p.name}</option>`;
+        if (isSavingsTarget) {
+          html += `<option value="${p.id}">👤 Individual - ${p.name}</option>`;
+        } else {
+          html += `<option value="${p.id}">${p.name}</option>`;
+        }
       });
 
       select.innerHTML = html;
@@ -2531,16 +2545,53 @@ class FinanceApp {
   }
 
   // =========================================================
-  // MÓDULO DE PLANEACIÓN DE AHORRO FAMILIAR
+  // MÓDULO DE PLANEACIÓN DE AHORRO FAMILIAR E INDIVIDUAL
   // =========================================================
 
-  openSavingsPlanModal() {
-    const plan = (this.state.savingsPlans || []).find(p => p.active);
+  openSavingsPlanModal(planId = null) {
+    if (!this.state.savingsPlans) this.state.savingsPlans = [];
+
+    // Poblar dinámicamente el selector de modalidad / responsable con los integrantes actuales
+    const targetSelect = document.getElementById('sp-target-type');
+    if (targetSelect) {
+      let optionsHtml = '<option value="shared">👨‍👩‍👧 En Conjunto (Familiar - Aporte Proporcional)</option>';
+      this.state.people.forEach(p => {
+        optionsHtml += `<option value="${p.id}">👤 Individual - ${p.name}</option>`;
+      });
+      targetSelect.innerHTML = optionsHtml;
+    }
+
+    let plan = null;
+    if (planId === 'new') {
+      plan = null;
+    } else if (typeof planId === 'string') {
+      plan = this.state.savingsPlans.find(p => p.id === planId) || null;
+    } else {
+      plan = this.state.savingsPlans.find(p => p.active) || null;
+    }
+
     const today = this.getSystemMonth();
     const [curY] = today.split('-');
     const yearEnd = `${curY}-12`;
 
-    document.getElementById('sp-name').value = plan ? plan.name : 'Meta de Ahorro Familiar';
+    const targetType = plan ? (plan.targetType || 'shared') : 'shared';
+    if (targetSelect) targetSelect.value = targetType;
+
+    const idInput = document.getElementById('sp-plan-id');
+    if (idInput) idInput.value = plan ? plan.id : '';
+
+    const modalTitle = document.getElementById('sp-modal-title');
+    if (modalTitle) modalTitle.textContent = plan ? '✏️ Editar Meta de Ahorro' : '🎯 Establecer Meta de Ahorro';
+
+    const nameInput = document.getElementById('sp-name');
+    if (nameInput) {
+      if (plan) {
+        nameInput.value = plan.name;
+      } else {
+        nameInput.value = targetType === 'shared' ? 'Meta de Ahorro Familiar' : 'Meta de Ahorro Individual';
+      }
+    }
+
     document.getElementById('sp-goal').value = plan ? plan.goal : '';
     document.getElementById('sp-start').value = plan ? plan.startMonth : today;
     document.getElementById('sp-end').value = plan ? plan.endMonth : yearEnd;
@@ -2548,15 +2599,27 @@ class FinanceApp {
     document.getElementById('sp-first-payment').value = plan ? (plan.firstPayment || '') : '';
 
     this.onSavingsMethodChange();
+    this.previewSavingsPlan();
 
-    if (this.state.people.length >= 1) document.getElementById('sp-th-person1').textContent = this.state.people[0]?.name || 'Persona 1';
-    if (this.state.people.length >= 2) document.getElementById('sp-th-person2').textContent = this.state.people[1]?.name || 'Persona 2';
+    document.getElementById('modal-savings-plan').classList.add('active');
+  }
 
-    document.getElementById('sp-preview-area').style.display = 'none';
-    document.getElementById('sp-validation-msg').style.display = 'none';
+  onSavingsTargetTypeChange() {
+    const targetType = document.getElementById('sp-target-type')?.value || 'shared';
+    const nameInput = document.getElementById('sp-name');
+    const planId = document.getElementById('sp-plan-id')?.value;
+
+    // Si es un plan nuevo y el nombre es el sugerido por defecto, actualizar el texto sugerido
+    if (!planId && nameInput) {
+      if (targetType === 'shared') {
+        nameInput.value = 'Meta de Ahorro Familiar';
+      } else {
+        const person = this.state.people.find(p => p.id === targetType);
+        nameInput.value = `Meta de Ahorro - ${person ? person.name : 'Individual'}`;
+      }
+    }
 
     this.previewSavingsPlan();
-    document.getElementById('modal-savings-plan').classList.add('active');
   }
 
   onSavingsMethodChange() {
@@ -2572,17 +2635,19 @@ class FinanceApp {
     const end = document.getElementById('sp-end')?.value;
     const method = document.getElementById('sp-method')?.value || 'uniform';
     const firstPayment = parseInt(document.getElementById('sp-first-payment')?.value) || 0;
+    const targetType = document.getElementById('sp-target-type')?.value || 'shared';
 
     const msgEl = document.getElementById('sp-validation-msg');
     const previewArea = document.getElementById('sp-preview-area');
 
     if (!goal || !start || !end || start > end) {
       if (previewArea) previewArea.style.display = 'none';
+      if (msgEl) msgEl.style.display = 'none';
       return;
     }
 
     const months = SavingsEngine.generateMonthRange(start, end);
-    const result = SavingsEngine.generatePlan(goal, months, method, firstPayment, this.state.people);
+    const result = SavingsEngine.generatePlan(goal, months, method, firstPayment, this.state.people, targetType);
 
     if (!result.valid) {
       if (msgEl) {
@@ -2596,54 +2661,91 @@ class FinanceApp {
       return;
     }
 
+    const targetPerson = this.state.people.find(p => p.id === targetType);
     if (msgEl) {
       msgEl.style.display = 'block';
       msgEl.style.background = 'var(--success-bg)';
       msgEl.style.color = 'var(--success)';
       msgEl.style.border = '1px solid var(--success)';
-      msgEl.textContent = `✅ Plan viable: ${months.length} mes(es), promedio $${SavingsEngine.formatCOP(goal / months.length)}/mes. Total exacto: $${SavingsEngine.formatCOP(goal)}.`;
+      if (targetType === 'shared') {
+        msgEl.textContent = `✅ Plan Familiar viable: ${months.length} mes(es), cuota promedio $${SavingsEngine.formatCOP(goal / months.length)}/mes dividido proporcionalmente. Total exacto: $${SavingsEngine.formatCOP(goal)}.`;
+      } else {
+        msgEl.textContent = `✅ Plan Individual viable para ${targetPerson ? targetPerson.name : 'el integrante'}: ${months.length} mes(es), cuota promedio $${SavingsEngine.formatCOP(goal / months.length)}/mes (asumido al 100%). Total exacto: $${SavingsEngine.formatCOP(goal)}.`;
+      }
     }
 
     const curr = this.state.settings.currency;
+    const trHead = document.getElementById('sp-preview-tr-head');
     const tbody = document.getElementById('sp-preview-tbody');
+
+    if (trHead) {
+      if (targetType === 'shared') {
+        trHead.innerHTML = `
+          <th style="padding:0.4rem 0.6rem; text-align:left;">Mes</th>
+          <th style="padding:0.4rem 0.6rem; text-align:right;">Cuota Total</th>
+          ${this.state.people.map(p => `<th style="padding:0.4rem 0.6rem; text-align:right; color:${p.color};">${p.name}</th>`).join('')}
+          <th style="padding:0.4rem 0.6rem; text-align:right;">Acumulado</th>
+        `;
+      } else {
+        trHead.innerHTML = `
+          <th style="padding:0.4rem 0.6rem; text-align:left;">Mes</th>
+          <th style="padding:0.4rem 0.6rem; text-align:right;">Cuota Meta</th>
+          <th style="padding:0.4rem 0.6rem; text-align:right; color:${targetPerson?.color || 'var(--primary)'};">Aporte Titular (${targetPerson ? targetPerson.name : 'Individual'})</th>
+          <th style="padding:0.4rem 0.6rem; text-align:right;">Acumulado</th>
+        `;
+      }
+    }
+
     if (tbody) {
       tbody.innerHTML = result.schedule.map(row => {
-        const p1 = row.contributions[0] ?? 0;
-        const p2 = row.contributions[1] ?? 0;
-        return `<tr style="border-bottom:1px solid var(--border-color);">
-          <td style="padding:0.35rem 0.6rem;">${this.formatMonthDisplay(row.month)}</td>
-          <td style="padding:0.35rem 0.6rem; text-align:right; font-weight:600;">${curr}${SavingsEngine.formatCOP(row.planned)}</td>
-          <td style="padding:0.35rem 0.6rem; text-align:right; color:var(--primary);">${curr}${SavingsEngine.formatCOP(p1)}</td>
-          <td style="padding:0.35rem 0.6rem; text-align:right; color:var(--success);">${curr}${SavingsEngine.formatCOP(p2)}</td>
-          <td style="padding:0.35rem 0.6rem; text-align:right; color:var(--text-muted);">${curr}${SavingsEngine.formatCOP(row.accumulated)}</td>
-        </tr>`;
+        if (targetType === 'shared') {
+          return `<tr style="border-bottom:1px solid var(--border-color);">
+            <td style="padding:0.35rem 0.6rem;">${this.formatMonthDisplay(row.month)}</td>
+            <td style="padding:0.35rem 0.6rem; text-align:right; font-weight:600;">${curr}${SavingsEngine.formatCOP(row.planned)}</td>
+            ${row.contributions.map((c, ci) => `<td style="padding:0.35rem 0.6rem; text-align:right; color:${this.state.people[ci]?.color || 'var(--primary)'};">${curr}${SavingsEngine.formatCOP(c)}</td>`).join('')}
+            <td style="padding:0.35rem 0.6rem; text-align:right; color:var(--text-muted);">${curr}${SavingsEngine.formatCOP(row.accumulated)}</td>
+          </tr>`;
+        } else {
+          return `<tr style="border-bottom:1px solid var(--border-color);">
+            <td style="padding:0.35rem 0.6rem;">${this.formatMonthDisplay(row.month)}</td>
+            <td style="padding:0.35rem 0.6rem; text-align:right; font-weight:600;">${curr}${SavingsEngine.formatCOP(row.planned)}</td>
+            <td style="padding:0.35rem 0.6rem; text-align:right; font-weight:600; color:${targetPerson?.color || 'var(--primary)'};">${curr}${SavingsEngine.formatCOP(row.planned)}</td>
+            <td style="padding:0.35rem 0.6rem; text-align:right; color:var(--text-muted);">${curr}${SavingsEngine.formatCOP(row.accumulated)}</td>
+          </tr>`;
+        }
       }).join('');
     }
+
     if (previewArea) previewArea.style.display = 'block';
   }
 
   saveSavingsPlan(e) {
     e.preventDefault();
+    const planId = document.getElementById('sp-plan-id')?.value;
+    const targetType = document.getElementById('sp-target-type')?.value || 'shared';
     const goal = parseInt(document.getElementById('sp-goal').value) || 0;
     const start = document.getElementById('sp-start').value;
     const end = document.getElementById('sp-end').value;
     const method = document.getElementById('sp-method').value;
     const firstPayment = parseInt(document.getElementById('sp-first-payment').value) || 0;
-    const name = document.getElementById('sp-name').value.trim() || 'Meta de Ahorro';
+    const name = document.getElementById('sp-name').value.trim() || (targetType === 'shared' ? 'Meta Familiar' : 'Meta Individual');
 
     if (!goal || !start || !end || start > end) { alert('Completa todos los campos correctamente.'); return; }
 
     const months = SavingsEngine.generateMonthRange(start, end);
-    const result = SavingsEngine.generatePlan(goal, months, method, firstPayment, this.state.people);
+    const result = SavingsEngine.generatePlan(goal, months, method, firstPayment, this.state.people, targetType);
     if (!result.valid) { alert(result.error); return; }
 
     if (!this.state.savingsPlans) this.state.savingsPlans = [];
 
-    // Deactivate existing active plans
+    // Desactivar temporalmente todos los planes para dejar activo el actual
     this.state.savingsPlans.forEach(p => p.active = false);
 
-    // Merge real data if existing plan overlaps
-    const existing = this.state.savingsPlans.find(p => p.startMonth === start && p.endMonth === end);
+    const existing = planId
+      ? this.state.savingsPlans.find(p => p.id === planId)
+      : this.state.savingsPlans.find(p => p.startMonth === start && p.endMonth === end && p.targetType === targetType);
+
+    // Conservar datos reales ya registrados en meses coincidentes
     const existingRealData = {};
     if (existing) {
       existing.schedule.forEach(row => { existingRealData[row.month] = { real: row.real, realNotes: row.realNotes }; });
@@ -2655,9 +2757,14 @@ class FinanceApp {
       }
     });
 
+    const targetPerson = this.state.people.find(p => p.id === targetType);
+    const targetName = targetType === 'shared' ? 'Familiar (En Conjunto)' : (targetPerson ? targetPerson.name : 'Individual');
+
     const plan = {
       id: existing ? existing.id : ('sp_' + Date.now()),
       name,
+      targetType,
+      targetName,
       goal,
       startMonth: start,
       endMonth: end,
@@ -2676,18 +2783,76 @@ class FinanceApp {
     this.render();
   }
 
+  switchSavingsPlan(planId) {
+    if (!this.state.savingsPlans) return;
+    this.state.savingsPlans.forEach(p => {
+      p.active = (p.id === planId);
+    });
+    this.saveState();
+    this.renderSavings();
+  }
+
   renderSavings() {
     const kpisEl = document.getElementById('savings-kpis');
     const planAreaEl = document.getElementById('savings-plan-area');
+    const selectorBar = document.getElementById('savings-plan-selector-bar');
     if (!kpisEl || !planAreaEl) return;
 
     if (!this.state.savingsPlans) this.state.savingsPlans = [];
-    const plan = this.state.savingsPlans.find(p => p.active);
+
+    // Renderizar barra de selector de metas (pestañas / pills)
+    if (selectorBar) {
+      if (this.state.savingsPlans.length > 0) {
+        selectorBar.innerHTML = `
+          <div class="savings-plan-nav">
+            <span style="font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-right:0.3rem;">🎯 Metas:</span>
+            ${this.state.savingsPlans.map(p => {
+              const isShared = !p.targetType || p.targetType === 'shared';
+              const icon = isShared ? '👨‍👩‍👧' : '👤';
+              const realSum = (p.schedule || []).reduce((s, r) => s + (r.real || 0), 0);
+              const pPct = p.goal > 0 ? Math.min(100, (realSum / p.goal) * 100) : 0;
+              return `
+                <button class="savings-plan-pill ${p.active ? 'active' : ''}" onclick="app.switchSavingsPlan('${p.id}')" title="${p.name}">
+                  <span>${icon}</span>
+                  <span>${p.name}</span>
+                  <span class="badge-pct">${pPct.toFixed(0)}%</span>
+                </button>
+              `;
+            }).join('')}
+            <button class="btn btn-secondary btn-sm" onclick="app.openSavingsPlanModal('new')" style="border-radius:var(--radius-full); margin-left:0.5rem;" title="Crear nueva meta familiar o individual">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Nueva Meta
+            </button>
+          </div>
+        `;
+      } else {
+        selectorBar.innerHTML = '';
+      }
+    }
+
+    let plan = this.state.savingsPlans.find(p => p.active);
+    if (!plan && this.state.savingsPlans.length > 0) {
+      plan = this.state.savingsPlans[0];
+      plan.active = true;
+    }
+
     const curr = this.state.settings.currency;
 
     if (!plan) {
       kpisEl.innerHTML = '';
-      planAreaEl.innerHTML = '<p class="muted-text" style="text-align:center; padding: 3rem 0;">No hay un plan de ahorro activo. Haz clic en "Establecer Meta de Ahorro" para comenzar.</p>';
+      planAreaEl.innerHTML = `
+        <div style="text-align:center; padding: 3.5rem 1rem; background: var(--bg-surface); border-radius: var(--radius-lg); border: 1.5px dashed var(--border-color);">
+          <div style="font-size: 3rem; margin-bottom: 0.8rem;">🎯</div>
+          <h3 style="margin-bottom: 0.4rem;">No hay metas de ahorro activas</h3>
+          <p class="muted-text" style="margin-bottom: 1.5rem; max-width: 450px; margin-left: auto; margin-right: auto;">
+            Establece metas de ahorro en conjunto para la familia o metas individuales para Alex o Karen.
+          </p>
+          <button class="btn btn-primary" onclick="app.openSavingsPlanModal('new')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Crear Primera Meta de Ahorro
+          </button>
+        </div>
+      `;
       return;
     }
 
@@ -2697,17 +2862,55 @@ class FinanceApp {
     const pct = totalPlanned > 0 ? Math.min(100, (totalReal / plan.goal) * 100) : 0;
     const monthsRemaining = plan.schedule.filter(r => r.month > today).length;
     const avgMonthly = plan.schedule.length > 0 ? (plan.goal / plan.schedule.length) : 0;
-    const ratios = SavingsEngine.calculateIncomeRatios(this.state.people);
+    const isShared = !plan.targetType || plan.targetType === 'shared';
+    const targetPerson = !isShared ? this.state.people.find(p => p.id === plan.targetType) : null;
 
-    // Person participation summaries
-    const personSummaries = this.state.people.map((p, i) => {
-      const ratio = ratios[i] || 0;
-      const totalContrib = plan.schedule.reduce((s, row) => s + (row.contributions?.[i] || 0), 0);
-      const realContrib = plan.schedule.reduce((s, row) => s + Math.round((row.real || 0) * ratio), 0);
+    let targetBadge = '';
+    if (isShared) {
+      targetBadge = `<span style="background:var(--primary-light); color:var(--primary); font-size:0.8rem; font-weight:600; padding:0.3rem 0.75rem; border-radius:var(--radius-full); border:1px solid rgba(79,70,229,0.3);">👨‍👩‍👧 Meta en Conjunto (Familiar)</span>`;
+    } else {
+      const color = targetPerson?.color || 'var(--success)';
+      targetBadge = `<span style="background:${color}18; color:${color}; font-size:0.8rem; font-weight:600; padding:0.3rem 0.75rem; border-radius:var(--radius-full); border:1px solid ${color}40;">👤 Meta Individual: ${targetPerson ? targetPerson.name : (plan.targetName || 'Individual')}</span>`;
+    }
+
+    // Per-person participation cards
+    let participationCards = '';
+    if (isShared) {
+      const ratios = SavingsEngine.calculateIncomeRatios(this.state.people);
+      const personSummaries = this.state.people.map((p, i) => {
+        const ratio = ratios[i] || 0;
+        const totalContrib = plan.schedule.reduce((s, row) => s + (row.contributions?.[i] || 0), 0);
+        const nextRow = plan.schedule.find(r => r.month >= today);
+        const nextContrib = nextRow ? (nextRow.contributions?.[i] || 0) : 0;
+        return { name: p.name, color: p.color, ratio, totalContrib, nextContrib };
+      });
+
+      participationCards = personSummaries.map(ps => `
+        <div class="metric-card" style="border-left: 4px solid ${ps.color};">
+          <div class="metric-icon" style="background:${ps.color}20;"><span style="font-size:1rem;">${ps.name.charAt(0)}</span></div>
+          <div class="metric-info">
+            <span class="metric-label">👤 ${ps.name} (${(ps.ratio * 100).toFixed(1)}%)</span>
+            <span class="metric-value" style="font-size:0.95rem;">${this.formatMoney(ps.nextContrib)}/mes</span>
+            <span style="font-size:0.78rem; color:var(--text-muted);">Acumulado plan: ${this.formatMoney(ps.totalContrib)}</span>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      const pColor = targetPerson?.color || 'var(--primary)';
+      const pName = targetPerson ? targetPerson.name : (plan.targetName || 'Integrante');
       const nextRow = plan.schedule.find(r => r.month >= today);
-      const nextContrib = nextRow ? (nextRow.contributions?.[i] || 0) : 0;
-      return { name: p.name, color: p.color, ratio, totalContrib, realContrib, nextContrib };
-    });
+      const nextContrib = nextRow ? nextRow.planned : avgMonthly;
+      participationCards = `
+        <div class="metric-card" style="border-left: 4px solid ${pColor};">
+          <div class="metric-icon" style="background:${pColor}20;"><span style="font-size:1.1rem;">👤</span></div>
+          <div class="metric-info">
+            <span class="metric-label">🎯 Titular Responsable</span>
+            <span class="metric-value" style="font-size:0.95rem; color:${pColor};">${pName} (100%)</span>
+            <span style="font-size:0.78rem; color:var(--text-muted);">Cuota actual: ${this.formatMoney(nextContrib)}/mes</span>
+          </div>
+        </div>
+      `;
+    }
 
     kpisEl.innerHTML = `
       <div class="metric-card card-savings">
@@ -2726,18 +2929,10 @@ class FinanceApp {
         <div class="metric-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
         <div class="metric-info"><span class="metric-label">📅 Meses Restantes</span><span class="metric-value">${monthsRemaining}</span></div>
       </div>
-      ${personSummaries.map(ps => `
-      <div class="metric-card" style="border-left: 4px solid ${ps.color};">
-        <div class="metric-icon" style="background:${ps.color}20;"><span style="font-size:1rem;">${ps.name.charAt(0)}</span></div>
-        <div class="metric-info">
-          <span class="metric-label">👤 ${ps.name} (${(ps.ratio * 100).toFixed(1)}%)</span>
-          <span class="metric-value" style="font-size:0.95rem;">${this.formatMoney(ps.nextContrib)}/mes</span>
-          <span style="font-size:0.78rem; color:var(--text-muted);">Acumulado plan: ${this.formatMoney(ps.totalContrib)}</span>
-        </div>
-      </div>`).join('')}
+      ${participationCards}
     `;
 
-    // Build plan body
+    // Table rows
     const tableRows = plan.schedule.map(row => {
       const realPaid = row.real || 0;
       const diff = realPaid - row.planned;
@@ -2750,18 +2945,54 @@ class FinanceApp {
         ? `<button class="btn btn-primary btn-sm" onclick="app.openRegisterSavingModal('${plan.id}','${row.month}',${row.planned})">✅ Registrar</button>`
         : '';
 
-      return `<tr style="background:${isCurrentMonth ? 'var(--primary-light)' : 'transparent'}; border-bottom:1px solid var(--border-color);">
-        <td style="padding:0.5rem 0.75rem; font-weight:${isCurrentMonth ? '700' : '400'};">${this.formatMonthDisplay(row.month)}${isCurrentMonth ? ' ◀' : ''}</td>
-        <td style="padding:0.5rem 0.75rem; text-align:right; font-weight:600;">${curr}${SavingsEngine.formatCOP(row.planned)}</td>
-        ${row.contributions.map((c, ci) => `<td style="padding:0.5rem 0.75rem; text-align:right; color:${this.state.people[ci]?.color || 'var(--text-primary)'};">${curr}${SavingsEngine.formatCOP(c)}</td>`).join('')}
-        <td style="padding:0.5rem 0.75rem; text-align:right;">${curr}${SavingsEngine.formatCOP(row.accumulated)}</td>
-        <td style="padding:0.5rem 0.75rem; text-align:right;">${realDisplay}</td>
-        <td style="padding:0.5rem 0.75rem; text-align:right;">${diffDisplay}</td>
-        <td style="padding:0.5rem 0.75rem; text-align:right;">${actionBtn}</td>
-      </tr>`;
+      if (isShared) {
+        return `<tr style="background:${isCurrentMonth ? 'var(--primary-light)' : 'transparent'}; border-bottom:1px solid var(--border-color);">
+          <td style="padding:0.5rem 0.75rem; font-weight:${isCurrentMonth ? '700' : '400'};">${this.formatMonthDisplay(row.month)}${isCurrentMonth ? ' ◀' : ''}</td>
+          <td style="padding:0.5rem 0.75rem; text-align:right; font-weight:600;">${curr}${SavingsEngine.formatCOP(row.planned)}</td>
+          ${row.contributions.map((c, ci) => `<td style="padding:0.5rem 0.75rem; text-align:right; color:${this.state.people[ci]?.color || 'var(--text-primary)'};">${curr}${SavingsEngine.formatCOP(c)}</td>`).join('')}
+          <td style="padding:0.5rem 0.75rem; text-align:right;">${curr}${SavingsEngine.formatCOP(row.accumulated)}</td>
+          <td style="padding:0.5rem 0.75rem; text-align:right;">${realDisplay}</td>
+          <td style="padding:0.5rem 0.75rem; text-align:right;">${diffDisplay}</td>
+          <td style="padding:0.5rem 0.75rem; text-align:right;">${actionBtn}</td>
+        </tr>`;
+      } else {
+        const pColor = targetPerson?.color || 'var(--primary)';
+        return `<tr style="background:${isCurrentMonth ? 'var(--primary-light)' : 'transparent'}; border-bottom:1px solid var(--border-color);">
+          <td style="padding:0.5rem 0.75rem; font-weight:${isCurrentMonth ? '700' : '400'};">${this.formatMonthDisplay(row.month)}${isCurrentMonth ? ' ◀' : ''}</td>
+          <td style="padding:0.5rem 0.75rem; text-align:right; font-weight:600;">${curr}${SavingsEngine.formatCOP(row.planned)}</td>
+          <td style="padding:0.5rem 0.75rem; text-align:right; font-weight:600; color:${pColor};">${curr}${SavingsEngine.formatCOP(row.planned)}</td>
+          <td style="padding:0.5rem 0.75rem; text-align:right;">${curr}${SavingsEngine.formatCOP(row.accumulated)}</td>
+          <td style="padding:0.5rem 0.75rem; text-align:right;">${realDisplay}</td>
+          <td style="padding:0.5rem 0.75rem; text-align:right;">${diffDisplay}</td>
+          <td style="padding:0.5rem 0.75rem; text-align:right;">${actionBtn}</td>
+        </tr>`;
+      }
     }).join('');
 
-    const personHeaders = this.state.people.map(p => `<th style="padding:0.5rem 0.75rem; text-align:right; color:${p.color};">${p.name}</th>`).join('');
+    let tableHeaders = '';
+    if (isShared) {
+      tableHeaders = `
+        <th style="padding:0.5rem 0.75rem;text-align:left;">Mes</th>
+        <th style="padding:0.5rem 0.75rem;text-align:right;">Cuota Total</th>
+        ${this.state.people.map(p => `<th style="padding:0.5rem 0.75rem; text-align:right; color:${p.color};">${p.name}</th>`).join('')}
+        <th style="padding:0.5rem 0.75rem;text-align:right;">Acumulado Plan</th>
+        <th style="padding:0.5rem 0.75rem;text-align:right;">Real</th>
+        <th style="padding:0.5rem 0.75rem;text-align:right;">Diferencia</th>
+        <th style="padding:0.5rem 0.75rem;text-align:right;">Acción</th>
+      `;
+    } else {
+      const pColor = targetPerson?.color || 'var(--primary)';
+      const pName = targetPerson ? targetPerson.name : (plan.targetName || 'Titular');
+      tableHeaders = `
+        <th style="padding:0.5rem 0.75rem;text-align:left;">Mes</th>
+        <th style="padding:0.5rem 0.75rem;text-align:right;">Cuota Meta</th>
+        <th style="padding:0.5rem 0.75rem;text-align:right; color:${pColor};">Aporte ${pName}</th>
+        <th style="padding:0.5rem 0.75rem;text-align:right;">Acumulado Plan</th>
+        <th style="padding:0.5rem 0.75rem;text-align:right;">Real</th>
+        <th style="padding:0.5rem 0.75rem;text-align:right;">Diferencia</th>
+        <th style="padding:0.5rem 0.75rem;text-align:right;">Acción</th>
+      `;
+    }
 
     // Compute progress bar
     const progBar = `
@@ -2777,32 +3008,30 @@ class FinanceApp {
     const recs = this.getSavingsRecommendations(plan, totalReal, today, monthsRemaining);
 
     planAreaEl.innerHTML = `
-      <div style="margin-bottom:1rem;">
-        <h3 style="margin-bottom:0.4rem;">${plan.name}</h3>
+      <div style="margin-bottom:1.25rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.6rem;">
+          <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+            <h3 style="margin:0; font-size:1.3rem;">${plan.name}</h3>
+            ${targetBadge}
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button class="btn btn-secondary btn-sm" onclick="app.openSavingsPlanModal('${plan.id}')">✏️ Editar Meta</button>
+            <button class="btn btn-danger btn-sm" onclick="app.deleteSavingsPlan('${plan.id}')">🗑️ Eliminar</button>
+          </div>
+        </div>
         ${progBar}
       </div>
 
       ${recs.length ? `<div style="padding:0.75rem 1rem; border-radius:var(--radius-md); background:var(--info-bg); border:1px solid var(--info); color:var(--info); margin-bottom:1rem; font-size:0.875rem;">
-        <strong>💡 Recomendaciones:</strong>
+        <strong>💡 Recomendaciones y Seguimiento:</strong>
         <ul style="margin:0.4rem 0 0 1rem;">${recs.map(r => `<li>${r}</li>`).join('')}</ul>
       </div>` : ''}
-
-      <div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-bottom:1rem;">
-        <button class="btn btn-secondary btn-sm" onclick="app.openSavingsPlanModal()">✏️ Editar Plan</button>
-        <button class="btn btn-danger btn-sm" onclick="app.deleteSavingsPlan('${plan.id}')">🗑️ Eliminar Plan</button>
-      </div>
 
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
           <thead>
             <tr style="background:var(--bg-hover);color:var(--text-secondary);">
-              <th style="padding:0.5rem 0.75rem;text-align:left;">Mes</th>
-              <th style="padding:0.5rem 0.75rem;text-align:right;">Ahorro Familiar</th>
-              ${personHeaders}
-              <th style="padding:0.5rem 0.75rem;text-align:right;">Acumulado Plan</th>
-              <th style="padding:0.5rem 0.75rem;text-align:right;">Real</th>
-              <th style="padding:0.5rem 0.75rem;text-align:right;">Diferencia</th>
-              <th style="padding:0.5rem 0.75rem;text-align:right;">Acción</th>
+              ${tableHeaders}
             </tr>
           </thead>
           <tbody>${tableRows}</tbody>
@@ -2810,7 +3039,7 @@ class FinanceApp {
       </div>
 
       <div style="margin-top:1.5rem;">
-        <h4 style="margin-bottom:1rem;">📊 Visualización del Plan</h4>
+        <h4 style="margin-bottom:1rem;">📊 Visualización de la Meta</h4>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
           <div style="background:var(--bg-surface);border-radius:var(--radius-md);padding:1rem;border:1px solid var(--border-color);">
             <h5 style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.5rem;">Ahorro Mensual (Planificado vs Real)</h5>
@@ -2821,7 +3050,7 @@ class FinanceApp {
             <div style="height:160px;"><canvas id="savings-chart-cumulative"></canvas></div>
           </div>
           <div style="background:var(--bg-surface);border-radius:var(--radius-md);padding:1rem;border:1px solid var(--border-color);">
-            <h5 style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.5rem;">Participación por Persona</h5>
+            <h5 style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.5rem;">${isShared ? 'Participación por Persona' : 'Cumplimiento de la Meta'}</h5>
             <div style="height:160px;"><canvas id="savings-chart-share"></canvas></div>
           </div>
         </div>
@@ -2834,9 +3063,7 @@ class FinanceApp {
 
   renderSavingsCharts(plan) {
     if (typeof Chart === 'undefined') return;
-    const curr = this.state.settings.currency;
 
-    // Destroy old instances
     ['savings-chart-monthly','savings-chart-cumulative','savings-chart-share'].forEach(id => {
       if (this._savingsCharts[id]) { this._savingsCharts[id].destroy(); delete this._savingsCharts[id]; }
     });
@@ -2879,18 +3106,36 @@ class FinanceApp {
       });
     }
 
-    // Chart 3: Participation donut
+    // Chart 3: Doughnut (Shared: Alex vs Karen; Individual: Real vs Restante)
     const ctx3 = document.getElementById('savings-chart-share')?.getContext('2d');
-    if (ctx3 && this.state.people.length > 0) {
-      const totalByPerson = this.state.people.map((p, i) => plan.schedule.reduce((s, r) => s + (r.contributions?.[i] || 0), 0));
-      this._savingsCharts['savings-chart-share'] = new Chart(ctx3, {
-        type: 'doughnut',
-        data: {
-          labels: this.state.people.map(p => p.name),
-          datasets: [{ data: totalByPerson, backgroundColor: this.state.people.map(p => p.color) }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 10 } } } } }
-      });
+    if (ctx3) {
+      const isShared = !plan.targetType || plan.targetType === 'shared';
+      if (isShared && this.state.people.length > 0) {
+        const totalByPerson = this.state.people.map((p, i) => plan.schedule.reduce((s, r) => s + (r.contributions?.[i] || 0), 0));
+        this._savingsCharts['savings-chart-share'] = new Chart(ctx3, {
+          type: 'doughnut',
+          data: {
+            labels: this.state.people.map(p => p.name),
+            datasets: [{ data: totalByPerson, backgroundColor: this.state.people.map(p => p.color) }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 10 } } } } }
+        });
+      } else {
+        const totalReal = plan.schedule.reduce((s, r) => s + (r.real || 0), 0);
+        const remaining = Math.max(0, plan.goal - totalReal);
+        const targetPerson = this.state.people.find(p => p.id === plan.targetType);
+        this._savingsCharts['savings-chart-share'] = new Chart(ctx3, {
+          type: 'doughnut',
+          data: {
+            labels: ['Ahorrado Real', 'Falta por Ahorrar'],
+            datasets: [{
+              data: [totalReal, remaining],
+              backgroundColor: ['#10b981', targetPerson?.color || '#4f46e5']
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
+        });
+      }
     }
   }
 
@@ -2898,27 +3143,38 @@ class FinanceApp {
     const recs = [];
     const remaining = plan.goal - totalReal;
     const currentRow = plan.schedule.find(r => r.month === today);
+    const isShared = !plan.targetType || plan.targetType === 'shared';
+    const targetPerson = !isShared ? this.state.people.find(p => p.id === plan.targetType) : null;
+    const titularName = targetPerson ? targetPerson.name : (plan.targetName || 'el titular');
 
     if (currentRow) {
-      recs.push(`Para este mes (${this.formatMonthDisplay(today)}), el hogar debe ahorrar ${this.formatMoney(currentRow.planned)}.`);
-      const ratios = SavingsEngine.calculateIncomeRatios(this.state.people);
-      this.state.people.forEach((p, i) => {
-        const contrib = currentRow.contributions?.[i] || 0;
-        if (contrib > 0) recs.push(`${p.name} debe aportar ${this.formatMoney(contrib)} (${((ratios[i] || 0) * 100).toFixed(1)}% del ingreso familiar).`);
-      });
+      if (isShared) {
+        recs.push(`Para este mes (${this.formatMonthDisplay(today)}), el hogar debe ahorrar ${this.formatMoney(currentRow.planned)} en conjunto.`);
+        const ratios = SavingsEngine.calculateIncomeRatios(this.state.people);
+        this.state.people.forEach((p, i) => {
+          const contrib = currentRow.contributions?.[i] || 0;
+          if (contrib > 0) recs.push(`${p.name} debe aportar ${this.formatMoney(contrib)} (${((ratios[i] || 0) * 100).toFixed(1)}% del ingreso familiar).`);
+        });
+      } else {
+        recs.push(`Para este mes (${this.formatMonthDisplay(today)}), ${titularName} debe ahorrar ${this.formatMoney(currentRow.planned)} para su meta individual.`);
+      }
     }
 
     if (totalReal > 0 && currentRow && currentRow.real > 0) {
       const diff = currentRow.real - currentRow.planned;
-      if (diff < 0) recs.push(`Este mes están ${this.formatMoney(Math.abs(diff))} por debajo del plan. Ajusten en próximos meses.`);
-      else if (diff > 0) recs.push(`¡Excelente! Ahorraron ${this.formatMoney(diff)} extra este mes. ¡Van adelantados!`);
+      if (diff < 0) recs.push(`Este mes están ${this.formatMoney(Math.abs(diff))} por debajo de la cuota. Ajusten en los próximos meses.`);
+      else if (diff > 0) recs.push(`¡Excelente! Ahorraron ${this.formatMoney(diff)} extra este mes. ¡Van adelantados hacia la meta!`);
     }
 
     if (monthsRemaining > 0 && remaining > 0) {
       const neededPerMonth = remaining / monthsRemaining;
-      recs.push(`Para alcanzar la meta, deben ahorrar en promedio ${this.formatMoney(neededPerMonth)}/mes durante los ${monthsRemaining} meses restantes.`);
+      if (isShared) {
+        recs.push(`Para alcanzar la meta familiar a tiempo, deben ahorrar en promedio ${this.formatMoney(neededPerMonth)}/mes durante los ${monthsRemaining} meses restantes.`);
+      } else {
+        recs.push(`Para alcanzar la meta a tiempo, ${titularName} debe ahorrar en promedio ${this.formatMoney(neededPerMonth)}/mes durante los ${monthsRemaining} meses restantes.`);
+      }
     }
-    if (remaining <= 0) recs.push('🏆 ¡Meta alcanzada! El hogar ha cumplido el objetivo de ahorro.');
+    if (remaining <= 0) recs.push(`🏆 ¡Meta alcanzada! Se ha cumplido exitosamente el objetivo de ahorro de ${this.formatMoney(plan.goal)}.`);
 
     return recs;
   }
@@ -2952,8 +3208,11 @@ class FinanceApp {
   }
 
   deleteSavingsPlan(planId) {
-    if (!confirm('¿Eliminar este plan de ahorro? Se perderán todos los datos de seguimiento.')) return;
+    if (!confirm('¿Eliminar esta meta de ahorro? Se perderán todos sus datos y seguimiento.')) return;
     this.state.savingsPlans = (this.state.savingsPlans || []).filter(p => p.id !== planId);
+    if (this.state.savingsPlans.length > 0 && !this.state.savingsPlans.some(p => p.active)) {
+      this.state.savingsPlans[0].active = true;
+    }
     this.saveState();
     this.render();
   }
@@ -3002,7 +3261,7 @@ class SavingsEngine {
    * Genera el plan mensual de pagos
    * @returns {{month, planned, alexAmount, karenAmount}[]}
    */
-  static generatePlan(goal, months, method, firstPayment, people) {
+  static generatePlan(goal, months, method, firstPayment, people, targetType = 'shared') {
     const n = months.length;
     if (n === 0 || goal <= 0) return { schedule: [], valid: false, error: 'Parámetros inválidos.' };
 
@@ -3035,24 +3294,30 @@ class SavingsEngine {
     const diff = goal - rawSum;
     amounts[n - 1] += diff;
 
-    // Build schedule with per-person distribution
+    // Build schedule with per-person distribution (shared or individual)
     let accumulated = 0;
     const schedule = months.map((month, i) => {
-      const familyAmount = amounts[i];
-      accumulated += familyAmount;
+      const quotaAmount = amounts[i];
+      accumulated += quotaAmount;
 
-      // Distribute proportionally; last person gets remainder to avoid rounding errors
-      const contributions = ratios.map((r, ri) => {
-        if (ri === ratios.length - 1) {
-          const othersSum = ratios.slice(0, ri).reduce((s, r2, j2) => s + Math.round(familyAmount * r2), 0);
-          return Math.round(familyAmount) - othersSum;
-        }
-        return Math.round(familyAmount * r);
-      });
+      let contributions;
+      if (targetType === 'shared') {
+        // Distribute proportionally; last person gets remainder to avoid rounding errors
+        contributions = ratios.map((r, ri) => {
+          if (ri === ratios.length - 1) {
+            const othersSum = ratios.slice(0, ri).reduce((s, r2, j2) => s + Math.round(quotaAmount * r2), 0);
+            return Math.round(quotaAmount) - othersSum;
+          }
+          return Math.round(quotaAmount * r);
+        });
+      } else {
+        // Individual goal: selected person gets 100% of the quota, others get 0
+        contributions = people.map(p => (p.id === targetType ? Math.round(quotaAmount) : 0));
+      }
 
       return {
         month,
-        planned: Math.round(familyAmount),
+        planned: Math.round(quotaAmount),
         contributions,
         accumulated: Math.round(accumulated),
         real: 0,
@@ -3064,15 +3329,18 @@ class SavingsEngine {
     const totalPlanned = schedule.reduce((s, r) => s + r.planned, 0);
     if (totalPlanned !== goal) {
       schedule[n - 1].planned += (goal - totalPlanned);
-      // Also fix last contributions
       const lastFam = schedule[n - 1].planned;
-      schedule[n - 1].contributions = ratios.map((r, ri) => {
-        if (ri === ratios.length - 1) {
-          const othersSum = ratios.slice(0, ri).reduce((s2, _r2, j2) => s2 + schedule[n-1].contributions[j2], 0);
-          return lastFam - othersSum;
-        }
-        return Math.round(lastFam * r);
-      });
+      if (targetType === 'shared') {
+        schedule[n - 1].contributions = ratios.map((r, ri) => {
+          if (ri === ratios.length - 1) {
+            const othersSum = ratios.slice(0, ri).reduce((s2, _r2, j2) => s2 + schedule[n-1].contributions[j2], 0);
+            return lastFam - othersSum;
+          }
+          return Math.round(lastFam * r);
+        });
+      } else {
+        schedule[n - 1].contributions = people.map(p => (p.id === targetType ? lastFam : 0));
+      }
     }
 
     return { schedule, valid: true, error: null };

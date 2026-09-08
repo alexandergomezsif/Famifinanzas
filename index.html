@@ -508,21 +508,24 @@
       <section id="view-savings" class="tab-view">
         <div class="view-header">
           <div>
-            <h2>Planeación de Ahorro Familiar</h2>
-            <p class="view-desc">Motor de ahorro progresivo para Alex &amp; Karen. Establece tu meta, elige la estrategia y sigue el progreso mes a mes.</p>
+            <h2>Planeación de Ahorro Familiar e Individual</h2>
+            <p class="view-desc">Motor de ahorro progresivo para Alex &amp; Karen. Establece metas en conjunto o individuales y sigue el progreso mes a mes.</p>
           </div>
-          <button class="btn btn-primary" onclick="app.openSavingsPlanModal()">
+          <button class="btn btn-primary" onclick="app.openSavingsPlanModal('new')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Establecer Meta de Ahorro
+            Nueva Meta de Ahorro
           </button>
         </div>
+
+        <!-- Selector de Planes / Pestañas de Metas -->
+        <div id="savings-plan-selector-bar" style="margin-bottom: 1.25rem;"></div>
 
         <!-- KPI Cards -->
         <div id="savings-kpis" class="metrics-grid"></div>
 
         <!-- Active plan area -->
         <div id="savings-plan-area">
-          <p class="muted-text" style="text-align:center; padding: 3rem 0;">No hay un plan de ahorro activo. Haz clic en "Establecer Meta de Ahorro" para comenzar.</p>
+          <p class="muted-text" style="text-align:center; padding: 3rem 0;">No hay un plan de ahorro activo. Haz clic en "Nueva Meta de Ahorro" para comenzar.</p>
         </div>
       </section>
 
@@ -574,14 +577,22 @@
   <div id="modal-savings-plan" class="modal-overlay">
     <div class="modal-card modal-lg">
       <div class="modal-header">
-        <h3>🎯 Establecer Meta de Ahorro Familiar</h3>
+        <h3 id="sp-modal-title">🎯 Establecer Meta de Ahorro</h3>
         <button class="icon-btn modal-close" onclick="app.closeModal('modal-savings-plan')">&times;</button>
       </div>
       <form id="form-savings-plan" onsubmit="app.saveSavingsPlan(event)">
+        <input type="hidden" id="sp-plan-id">
         <div class="form-row">
           <div class="form-group flex-1">
-            <label for="sp-name">Nombre del Plan:</label>
-            <input type="text" id="sp-name" class="form-input" placeholder="Ej: Fondo de Vacaciones" required>
+            <label for="sp-name">Nombre de la Meta:</label>
+            <input type="text" id="sp-name" class="form-input" placeholder="Ej: Fondo de Vacaciones / Ahorro Moto" required>
+          </div>
+          <div class="form-group flex-1">
+            <label for="sp-target-type">Modalidad / Responsable:</label>
+            <select id="sp-target-type" class="form-input" onchange="app.onSavingsTargetTypeChange()" required>
+              <option value="shared">👨‍👩‍👧 En Conjunto (Familiar - Aporte Proporcional)</option>
+              <!-- Las opciones individuales de integrantes se cargan dinámicamente -->
+            </select>
           </div>
         </div>
         <div class="form-row">
@@ -622,9 +633,9 @@
           <div style="overflow-x:auto;">
             <table id="sp-preview-table" style="width:100%; border-collapse:collapse; font-size:0.8rem;">
               <thead>
-                <tr style="background: var(--primary-light); color: var(--primary);">
+                <tr id="sp-preview-tr-head" style="background: var(--primary-light); color: var(--primary);">
                   <th style="padding:0.4rem 0.6rem; text-align:left;">Mes</th>
-                  <th style="padding:0.4rem 0.6rem; text-align:right;">Ahorro Familiar</th>
+                  <th style="padding:0.4rem 0.6rem; text-align:right;" id="sp-th-total">Cuota Mensual</th>
                   <th style="padding:0.4rem 0.6rem; text-align:right;" id="sp-th-person1">Persona 1</th>
                   <th style="padding:0.4rem 0.6rem; text-align:right;" id="sp-th-person2">Persona 2</th>
                   <th style="padding:0.4rem 0.6rem; text-align:right;">Acumulado</th>
@@ -636,7 +647,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-savings-plan')">Cancelar</button>
-          <button type="submit" class="btn btn-primary" id="sp-save-btn">💾 Guardar Plan</button>
+          <button type="submit" class="btn btn-primary" id="sp-save-btn">💾 Guardar Meta</button>
         </div>
       </form>
     </div>

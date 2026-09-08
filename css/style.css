@@ -1830,3 +1830,54 @@ body {
     justify-content: center;
   }
 }
+
+/* =========================================================
+   SELECTOR DE PLANES Y METAS DE AHORRO (FAMILIAR E INDIVIDUAL)
+   ========================================================= */
+.savings-plan-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.35rem 0.2rem;
+  scrollbar-width: thin;
+}
+
+.savings-plan-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface);
+  border: 1.5px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.savings-plan-pill:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--primary);
+}
+
+.savings-plan-pill.active {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(79, 70, 229, 0.18);
+}
+
+.savings-plan-pill .badge-pct {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-full);
+  background-color: rgba(79, 70, 229, 0.15);
+  color: var(--primary);
+  font-weight: 700;
+}
