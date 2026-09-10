@@ -137,6 +137,137 @@ class FinancialEngine {
 }
 
 /**
+ * MOTOR MATEMÁTICO DE AHORRO PROGRESIVO (SavingsEngine v1.0)
+ */
+class SavingsEngine {
+  /**
+   * Calcula los ratios de participación por ingresos
+   */
+  static calculateIncomeRatios(people) {
+    const totalIncome = people.reduce((s, p) => s + (parseFloat(p.income) || 0), 0);
+    if (totalIncome === 0) return people.map(() => 0);
+    return people.map(p => (parseFloat(p.income) || 0) / totalIncome);
+  }
+
+  /**
+   * Genera los meses entre startMonth y endMonth (inclusive)
+   * @returns {string[]} Array de 'YYYY-MM'
+   */
+  static generateMonthRange(startMonth, endMonth) {
+    const months = [];
+    const [sy, sm] = startMonth.split('-').map(Number);
+    const [ey, em] = endMonth.split('-').map(Number);
+    let y = sy, m = sm;
+    while (y < ey || (y === ey && m <= em)) {
+      months.push(`${y}-${String(m).padStart(2, '0')}`);
+      m++;
+      if (m > 12) { m = 1; y++; }
+    }
+    return months;
+  }
+
+  /**
+   * Calcula incremento aritmético d para que Sum(A + k*d, k=0..n-1) = M
+   * M = n/2 * [2A + (n-1)*d]  =>  d = (2M/n - 2A) / (n-1)
+   */
+  static calculateArithmeticIncrement(goal, n, firstPayment) {
+    if (n <= 1) return 0;
+    return (2 * goal / n - 2 * firstPayment) / (n - 1);
+  }
+
+  /**
+   * Genera el plan mensual de pagos
+   * @returns {{schedule: Array, valid: boolean, error: string|null}}
+   */
+  static generatePlan(goal, months, method, firstPayment, people, targetType = 'shared') {
+    const n = months.length;
+    if (n === 0 || goal <= 0) return { schedule: [], valid: false, error: 'Parámetros inválidos.' };
+
+    const ratios = this.calculateIncomeRatios(people);
+    let amounts = [];
+
+    if (method === 'uniform') {
+      const monthly = goal / n;
+      amounts = Array(n).fill(monthly);
+    } else if (method === 'arithmetic_inc' || method === 'arithmetic_dec') {
+      const A = parseFloat(firstPayment) || 0;
+      const d = this.calculateArithmeticIncrement(goal, n, A);
+
+      if (method === 'arithmetic_inc' && d < 0) {
+        return { schedule: [], valid: false, error: `Plan inviable: El ahorro inicial ($${A.toLocaleString('es-ES')}) ya supera la cuota uniforme necesaria para la meta. Reduzca el ahorro inicial o aumente la meta.` };
+      }
+      if (method === 'arithmetic_dec' && d > 0) {
+        return { schedule: [], valid: false, error: `Para un plan decreciente, el ahorro inicial debe ser mayor que la cuota promedio. Aumente el ahorro inicial.` };
+      }
+
+      amounts = Array.from({ length: n }, (_, k) => A + k * d);
+      const anyNegative = amounts.some(a => a < 0);
+      if (anyNegative) {
+        return { schedule: [], valid: false, error: `El plan genera cuotas negativas con estos parámetros. Ajuste el ahorro inicial.` };
+      }
+    }
+
+    // Adjust last period for exact total
+    const rawSum = amounts.reduce((s, a) => s + a, 0);
+    const diff = goal - rawSum;
+    amounts[n - 1] += diff;
+
+    // Build schedule with per-person distribution (shared or individual)
+    let accumulated = 0;
+    const schedule = months.map((month, i) => {
+      const quotaAmount = amounts[i];
+      accumulated += quotaAmount;
+
+      let contributions;
+      if (targetType === 'shared') {
+        contributions = ratios.map((r, ri) => {
+          if (ri === ratios.length - 1) {
+            const othersSum = ratios.slice(0, ri).reduce((s, r2) => s + Math.round(quotaAmount * r2), 0);
+            return Math.round(quotaAmount) - othersSum;
+          }
+          return Math.round(quotaAmount * r);
+        });
+      } else {
+        contributions = people.map(p => (p.id === targetType ? Math.round(quotaAmount) : 0));
+      }
+
+      return {
+        month,
+        planned: Math.round(quotaAmount),
+        contributions,
+        accumulated: Math.round(accumulated),
+        real: 0,
+        realNotes: ''
+      };
+    });
+
+    // Final total check: adjust last month planned
+    const totalPlanned = schedule.reduce((s, r) => s + r.planned, 0);
+    if (totalPlanned !== goal) {
+      schedule[n - 1].planned += (goal - totalPlanned);
+      const lastFam = schedule[n - 1].planned;
+      if (targetType === 'shared') {
+        schedule[n - 1].contributions = ratios.map((r, ri) => {
+          if (ri === ratios.length - 1) {
+            const othersSum = ratios.slice(0, ri).reduce((s2, _r2, j2) => s2 + schedule[n-1].contributions[j2], 0);
+            return lastFam - othersSum;
+          }
+          return Math.round(lastFam * r);
+        });
+      } else {
+        schedule[n - 1].contributions = people.map(p => (p.id === targetType ? lastFam : 0));
+      }
+    }
+
+    return { schedule, valid: true, error: null };
+  }
+
+  static formatCOP(value) {
+    return Math.round(value).toLocaleString('es-ES');
+  }
+}
+
+/**
  * CLASE PRINCIPAL DE LA APLICACIÓN
  */
 class FinanceApp {
@@ -158,19 +289,16 @@ class FinanceApp {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (!parsed.currentMonth) parsed.currentMonth = this.getSystemMonth();
-        if (parsed.people) {
-          parsed.people.forEach(p => {
-            if (p.id === 'p_2' && p.name === 'Esposa') p.name = 'Karen (Esposa)';
-            if (p.id === 'p_1' && p.name === 'Alex Gómez') p.name = 'Alex (Esposo)';
-          });
-        }
-        return parsed;
+        return this.normalizeAndMigrateState(parsed);
       } catch (e) {
         console.error('Error al recuperar datos locales:', e);
       }
     }
 
+    return this.normalizeAndMigrateState(this.getDefaultInitialState());
+  }
+
+  getDefaultInitialState() {
     const defaultMonth = this.getSystemMonth();
     return {
       settings: {
@@ -294,6 +422,238 @@ class FinanceApp {
         ]
       },
       savingsPlans: []
+    };
+  }
+
+  // Motor Centralizado de Normalización, Migración y Retrocompatibilidad
+  normalizeAndMigrateState(rawState) {
+    const raw = (rawState && typeof rawState === 'object') ? rawState : {};
+    const defaultMonth = this.getSystemMonth();
+
+    // 1. Settings (Garantizar householdName, currency y migrar theme -> darkMode)
+    const defaultSettings = {
+      householdName: 'Familia Gómez Rico',
+      currency: '$',
+      darkMode: false
+    };
+    const incomingSettings = (raw.settings && typeof raw.settings === 'object') ? raw.settings : {};
+    let isDarkMode = false;
+    if (typeof incomingSettings.darkMode === 'boolean') {
+      isDarkMode = incomingSettings.darkMode;
+    } else if (incomingSettings.theme === 'dark') {
+      isDarkMode = true;
+    }
+    const settings = {
+      ...defaultSettings,
+      ...incomingSettings,
+      darkMode: isDarkMode
+    };
+
+    // 2. People (Normalizar nombres antiguos, ids, ingresos y colores)
+    let people = Array.isArray(raw.people) && raw.people.length > 0 ? [...raw.people] : [
+      { id: 'p_1', name: 'Alex (Esposo)', income: 4500000, color: '#4F46E5' },
+      { id: 'p_2', name: 'Karen (Esposa)', income: 3200000, color: '#10B981' }
+    ];
+
+    const defaultColors = ['#4F46E5', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4'];
+    people = people.map((p, idx) => {
+      const id = p.id || `p_${idx + 1}`;
+      let name = (p.name || `Integrante ${idx + 1}`).trim();
+      if (id === 'p_2' && (name === 'Esposa' || name === 'Karen Rico' || name === 'Karen')) {
+        name = 'Karen (Esposa)';
+      }
+      if (id === 'p_1' && (name === 'Alex Gómez' || name === 'Alex Gomez' || name === 'Alex')) {
+        name = 'Alex (Esposo)';
+      }
+      return {
+        id,
+        name,
+        income: typeof p.income === 'number' && !isNaN(p.income) ? p.income : (parseFloat(p.income) || 0),
+        color: p.color || defaultColors[idx % defaultColors.length]
+      };
+    });
+
+    // 3. Obligations (Garantizar campos requeridos, responsable válido y debtDetails)
+    let obligations = Array.isArray(raw.obligations) ? [...raw.obligations] : [];
+    obligations = obligations.map((ob, idx) => {
+      const item = { ...ob };
+      if (!item.id) item.id = `ob_${idx + 1}`;
+      if (!item.name) item.name = `Obligación ${idx + 1}`;
+      if (!item.category) item.category = 'General';
+      if (!item.type) item.type = 'expense';
+      item.amount = typeof item.amount === 'number' && !isNaN(item.amount) ? item.amount : (parseFloat(item.amount) || 0);
+
+      if (!item.responsible || (item.responsible !== 'shared' && !people.some(p => p.id === item.responsible))) {
+        item.responsible = 'shared';
+      }
+
+      if (item.type === 'debt') {
+        const dd = (item.debtDetails && typeof item.debtDetails === 'object') ? item.debtDetails : {};
+        item.debtDetails = {
+          purpose: dd.purpose || item.name,
+          principal: parseFloat(dd.principal) || item.amount,
+          rate: parseFloat(dd.rate) || 0,
+          rateType: dd.rateType || 'EA',
+          term: parseInt(dd.term) || 12,
+          paidTerms: parseInt(dd.paidTerms) || 0
+        };
+      }
+      return item;
+    });
+
+    // 4. Payments
+    let payments = (raw.payments && typeof raw.payments === 'object') ? { ...raw.payments } : {};
+
+    // 5. Month & Tab
+    const currentMonth = (typeof raw.currentMonth === 'string' && /^\d{4}-\d{2}$/.test(raw.currentMonth))
+      ? raw.currentMonth
+      : defaultMonth;
+    const currentTab = typeof raw.currentTab === 'string' ? raw.currentTab : 'dashboard';
+
+    // 6. Savings Plans (Retrocompatibilidad total con respaldos antiguos y nuevos)
+    let savingsPlans = [];
+
+    if (Array.isArray(raw.savingsPlans)) {
+      savingsPlans = [...raw.savingsPlans];
+    } else if (raw.savingsPlan && typeof raw.savingsPlan === 'object') {
+      savingsPlans = [raw.savingsPlan];
+    }
+
+    // Si el respaldo no tiene planes pero contiene obligaciones de ahorro (v1 a v3.3), sintetizar un plan adaptado
+    if (savingsPlans.length === 0) {
+      const savingsObligations = obligations.filter(ob => ob.type === 'savings' || ob.category === 'Ahorro e Inversión');
+      if (savingsObligations.length > 0) {
+        savingsObligations.forEach((so, sIdx) => {
+          const annualGoal = (so.amount || 0) * 12;
+          const [curY] = currentMonth.split('-');
+          const startMonth = `${curY}-01`;
+          const endMonth = `${curY}-12`;
+          const targetType = (so.responsible && people.some(p => p.id === so.responsible)) ? so.responsible : 'shared';
+          const targetPerson = people.find(p => p.id === targetType);
+          const targetName = targetType === 'shared' ? 'Familiar (En Conjunto)' : (targetPerson ? targetPerson.name : 'Individual');
+
+          const months = SavingsEngine.generateMonthRange(startMonth, endMonth);
+          const planRes = SavingsEngine.generatePlan(annualGoal, months, 'uniform', 0, people, targetType);
+
+          if (planRes.valid && planRes.schedule) {
+            planRes.schedule.forEach(row => {
+              const mPayments = payments[row.month];
+              if (Array.isArray(mPayments)) {
+                const payItem = mPayments.find(p => p.obligationId === so.id && p.status === 'paid');
+                if (payItem) {
+                  row.real = parseFloat(payItem.amount) || 0;
+                  row.realNotes = payItem.notes || '';
+                }
+              }
+            });
+          }
+
+          savingsPlans.push({
+            id: `sp_migrated_${so.id || sIdx}`,
+            name: so.name || 'Meta de Ahorro Familiar',
+            targetType,
+            targetName,
+            goal: annualGoal,
+            startMonth,
+            endMonth,
+            method: 'uniform',
+            firstPayment: 0,
+            active: sIdx === 0,
+            schedule: planRes.valid ? planRes.schedule : []
+          });
+        });
+      }
+    }
+
+    // Normalizar cada plan
+    savingsPlans = savingsPlans.map((plan, pIdx) => {
+      const p = { ...plan };
+      if (!p.id) p.id = `sp_${Date.now()}_${pIdx}`;
+      if (!p.name) p.name = p.targetType === 'shared' ? 'Meta de Ahorro Familiar' : 'Meta de Ahorro Individual';
+
+      if (!p.targetType || (p.targetType !== 'shared' && !people.some(per => per.id === p.targetType))) {
+        p.targetType = 'shared';
+      }
+
+      if (p.targetType === 'shared') {
+        p.targetName = 'Familiar (En Conjunto)';
+      } else {
+        const found = people.find(per => per.id === p.targetType);
+        p.targetName = found ? found.name : 'Individual';
+      }
+
+      p.goal = typeof p.goal === 'number' && !isNaN(p.goal) ? p.goal : (parseFloat(p.goal) || 0);
+      const [curY] = currentMonth.split('-');
+      if (!p.startMonth || typeof p.startMonth !== 'string') p.startMonth = `${curY}-01`;
+      if (!p.endMonth || typeof p.endMonth !== 'string') p.endMonth = `${curY}-12`;
+      if (!p.method || !['uniform', 'arithmetic_inc', 'arithmetic_dec'].includes(p.method)) p.method = 'uniform';
+      p.firstPayment = parseFloat(p.firstPayment) || 0;
+
+      // Normalizar schedule
+      if (!Array.isArray(p.schedule) || p.schedule.length === 0) {
+        if (p.goal > 0 && p.startMonth <= p.endMonth) {
+          const months = SavingsEngine.generateMonthRange(p.startMonth, p.endMonth);
+          const gen = SavingsEngine.generatePlan(p.goal, months, p.method, p.firstPayment, people, p.targetType);
+          p.schedule = gen.valid ? gen.schedule : [];
+        } else {
+          p.schedule = [];
+        }
+      } else {
+        p.schedule = p.schedule.map(row => {
+          let contributions = Array.isArray(row.contributions) ? row.contributions : null;
+          // Compatibilidad con versiones previas que guardaban alexAmount / karenAmount
+          if (!contributions && (row.alexAmount !== undefined || row.karenAmount !== undefined)) {
+            contributions = [parseFloat(row.alexAmount) || 0, parseFloat(row.karenAmount) || 0];
+          }
+          if (!contributions || contributions.length !== people.length) {
+            if (p.targetType === 'shared') {
+              const ratios = SavingsEngine.calculateIncomeRatios(people);
+              const q = row.planned || 0;
+              contributions = ratios.map((r, ri) => {
+                if (ri === ratios.length - 1) {
+                  const othersSum = ratios.slice(0, ri).reduce((s, r2) => s + Math.round(q * r2), 0);
+                  return Math.round(q) - othersSum;
+                }
+                return Math.round(q * r);
+              });
+            } else {
+              contributions = people.map(per => per.id === p.targetType ? (row.planned || 0) : 0);
+            }
+          }
+          return {
+            month: row.month || currentMonth,
+            planned: parseFloat(row.planned) || 0,
+            contributions,
+            accumulated: parseFloat(row.accumulated) || 0,
+            real: parseFloat(row.real) || 0,
+            realNotes: row.realNotes || ''
+          };
+        });
+      }
+
+      p.active = Boolean(p.active);
+      return p;
+    });
+
+    if (savingsPlans.length > 0) {
+      const activeIdx = savingsPlans.findIndex(p => p.active);
+      if (activeIdx === -1) {
+        savingsPlans[0].active = true;
+      } else {
+        savingsPlans.forEach((p, i) => {
+          p.active = (i === activeIdx);
+        });
+      }
+    }
+
+    return {
+      settings,
+      people,
+      obligations,
+      payments,
+      savingsPlans,
+      currentMonth,
+      currentTab
     };
   }
 
@@ -2293,44 +2653,36 @@ class FinanceApp {
     }
   }
 
-  // Validación y Aplicación de Estado Restaurado
+  // Validación y Aplicación de Estado Restaurado con Retrocompatibilidad Total
   applyImportedState(imported) {
     if (!imported || typeof imported !== 'object') {
       alert('El formato del archivo no es válido.');
       return;
     }
 
-    if (!Array.isArray(imported.people) || !Array.isArray(imported.obligations)) {
-      alert('El archivo no contiene la estructura requerida de Famifinanzas (integrantes y obligaciones).');
+    if (!Array.isArray(imported.people) && !Array.isArray(imported.obligations)) {
+      alert('El archivo no contiene la estructura requerida de Famifinanzas (integrantes u obligaciones).');
       return;
     }
 
-    const peopleCount = imported.people.length;
-    const obCount = imported.obligations.length;
+    // Normalizar y migrar el estado recibido con retrocompatibilidad automática
+    const migrated = this.normalizeAndMigrateState(imported);
+
+    const peopleCount = migrated.people.length;
+    const obCount = migrated.obligations.length;
+    const plansCount = migrated.savingsPlans.length;
 
     const confirmMsg = `¿Está seguro de restaurar este respaldo?\n\n` +
-      `• Integrantes encontrados: ${peopleCount}\n` +
-      `• Obligaciones encontradas: ${obCount}\n\n` +
-      `Esta acción actualizará sus registros actuales.`;
+      `• Integrantes reconocidos: ${peopleCount}\n` +
+      `• Obligaciones reconocidas: ${obCount}\n` +
+      `• Metas de ahorro adaptadas: ${plansCount}\n\n` +
+      `El sistema adaptará y migrará automáticamente todos los datos a la versión más reciente de Famifinanzas garantizando total compatibilidad.`;
 
     if (!confirm(confirmMsg)) return;
 
-    // Asegurar estructura
-    this.state = {
-      people: imported.people || [],
-      obligations: imported.obligations || [],
-      payments: imported.payments || {},
-      settings: Object.assign({
-        householdName: 'Familia Gómez Rico',
-        currency: '$',
-        theme: 'light'
-      }, imported.settings || {}),
-      currentMonth: imported.currentMonth || this.getCurrentMonthString(),
-      currentTab: 'dashboard'
-    };
-
+    this.state = migrated;
     this.saveState();
-    alert(`¡Copia de seguridad restaurada exitosamente!\nSe cargaron ${peopleCount} personas y ${obCount} obligaciones.`);
+    alert(`¡Copia de seguridad restaurada y adaptada exitosamente!\nSe cargaron ${peopleCount} integrantes, ${obCount} obligaciones y ${plansCount} metas de ahorro.`);
     location.reload();
   }
 
@@ -3215,139 +3567,6 @@ class FinanceApp {
     }
     this.saveState();
     this.render();
-  }
-}
-
-// =============================================================
-// MOTOR MATEMÁTICO DE AHORRO PROGRESIVO (SavingsEngine v1.0)
-// =============================================================
-class SavingsEngine {
-  /**
-   * Calcula los ratios de participación por ingresos
-   */
-  static calculateIncomeRatios(people) {
-    const totalIncome = people.reduce((s, p) => s + (parseFloat(p.income) || 0), 0);
-    if (totalIncome === 0) return people.map(() => 0);
-    return people.map(p => (parseFloat(p.income) || 0) / totalIncome);
-  }
-
-  /**
-   * Genera los meses entre startMonth y endMonth (inclusive)
-   * @returns {string[]} Array de 'YYYY-MM'
-   */
-  static generateMonthRange(startMonth, endMonth) {
-    const months = [];
-    const [sy, sm] = startMonth.split('-').map(Number);
-    const [ey, em] = endMonth.split('-').map(Number);
-    let y = sy, m = sm;
-    while (y < ey || (y === ey && m <= em)) {
-      months.push(`${y}-${String(m).padStart(2, '0')}`);
-      m++;
-      if (m > 12) { m = 1; y++; }
-    }
-    return months;
-  }
-
-  /**
-   * Calcula incremento aritmético d para que Sum(A + k*d, k=0..n-1) = M
-   * M = n/2 * [2A + (n-1)*d]  =>  d = (2M/n - 2A) / (n-1)
-   */
-  static calculateArithmeticIncrement(goal, n, firstPayment) {
-    if (n <= 1) return 0;
-    return (2 * goal / n - 2 * firstPayment) / (n - 1);
-  }
-
-  /**
-   * Genera el plan mensual de pagos
-   * @returns {{month, planned, alexAmount, karenAmount}[]}
-   */
-  static generatePlan(goal, months, method, firstPayment, people, targetType = 'shared') {
-    const n = months.length;
-    if (n === 0 || goal <= 0) return { schedule: [], valid: false, error: 'Parámetros inválidos.' };
-
-    const ratios = this.calculateIncomeRatios(people);
-    let amounts = [];
-
-    if (method === 'uniform') {
-      const monthly = goal / n;
-      amounts = Array(n).fill(monthly);
-    } else if (method === 'arithmetic_inc' || method === 'arithmetic_dec') {
-      const A = parseFloat(firstPayment) || 0;
-      const d = this.calculateArithmeticIncrement(goal, n, A);
-
-      if (method === 'arithmetic_inc' && d < 0) {
-        return { schedule: [], valid: false, error: `Plan inviable: El ahorro inicial ($${A.toLocaleString('es-ES')}) ya supera la cuota uniforme necesaria para la meta. Reduzca el ahorro inicial o aumente la meta.` };
-      }
-      if (method === 'arithmetic_dec' && d > 0) {
-        return { schedule: [], valid: false, error: `Para un plan decreciente, el ahorro inicial debe ser mayor que la cuota promedio. Aumente el ahorro inicial.` };
-      }
-
-      amounts = Array.from({ length: n }, (_, k) => A + k * d);
-      const anyNegative = amounts.some(a => a < 0);
-      if (anyNegative) {
-        return { schedule: [], valid: false, error: `El plan genera cuotas negativas con estos parámetros. Ajuste el ahorro inicial.` };
-      }
-    }
-
-    // Adjust last period for exact total
-    const rawSum = amounts.reduce((s, a) => s + a, 0);
-    const diff = goal - rawSum;
-    amounts[n - 1] += diff;
-
-    // Build schedule with per-person distribution (shared or individual)
-    let accumulated = 0;
-    const schedule = months.map((month, i) => {
-      const quotaAmount = amounts[i];
-      accumulated += quotaAmount;
-
-      let contributions;
-      if (targetType === 'shared') {
-        // Distribute proportionally; last person gets remainder to avoid rounding errors
-        contributions = ratios.map((r, ri) => {
-          if (ri === ratios.length - 1) {
-            const othersSum = ratios.slice(0, ri).reduce((s, r2, j2) => s + Math.round(quotaAmount * r2), 0);
-            return Math.round(quotaAmount) - othersSum;
-          }
-          return Math.round(quotaAmount * r);
-        });
-      } else {
-        // Individual goal: selected person gets 100% of the quota, others get 0
-        contributions = people.map(p => (p.id === targetType ? Math.round(quotaAmount) : 0));
-      }
-
-      return {
-        month,
-        planned: Math.round(quotaAmount),
-        contributions,
-        accumulated: Math.round(accumulated),
-        real: 0,
-        realNotes: ''
-      };
-    });
-
-    // Final total check: adjust last month planned
-    const totalPlanned = schedule.reduce((s, r) => s + r.planned, 0);
-    if (totalPlanned !== goal) {
-      schedule[n - 1].planned += (goal - totalPlanned);
-      const lastFam = schedule[n - 1].planned;
-      if (targetType === 'shared') {
-        schedule[n - 1].contributions = ratios.map((r, ri) => {
-          if (ri === ratios.length - 1) {
-            const othersSum = ratios.slice(0, ri).reduce((s2, _r2, j2) => s2 + schedule[n-1].contributions[j2], 0);
-            return lastFam - othersSum;
-          }
-          return Math.round(lastFam * r);
-        });
-      } else {
-        schedule[n - 1].contributions = people.map(p => (p.id === targetType ? lastFam : 0));
-      }
-    }
-
-    return { schedule, valid: true, error: null };
-  }
-
-  static formatCOP(value) {
-    return Math.round(value).toLocaleString('es-ES');
   }
 }
 
